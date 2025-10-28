@@ -3,438 +3,364 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英文遊戲樂園：完整版</title>
+    <title>英文學習遊戲樂園</title>
     <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* 定義可愛的卡通字體，使用 Inter 搭配圓角和粗體營造童趣感 */
-        .game-font {
-            font-family: 'Inter', sans-serif;
-        }
+        /* 基礎設置與可愛配色 */
+        .game-font { font-family: 'Inter', sans-serif; }
+        .shadow-cute { box-shadow: 0 4px 0 0 #D1A3A3; }
+        .key-btn { height: 50px; transition: all 0.1s; text-transform: none; }
+        .key-btn:active { box-shadow: 0 2px 0 0 #D1A3A3; transform: translateY(2px); }
 
-        /* 游標閃爍動畫 */
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-        .cursor {
-            animation: blink 1s step-end infinite;
-        }
-
-        /* 按鈕基礎樣式 */
-        .key-btn {
-            height: 50px; /* Base height */
-            transition: all 0.1s;
-        }
-        .shadow-cute {
-            box-shadow: 0 4px 0 0 #D1A3A3;
-        }
-        .key-btn:active {
-            box-shadow: 0 2px 0 0 #D1A3A3;
-            transform: translateY(2px);
-        }
-
-        /* 遊戲 1: 恐龍蛋卡片樣式 */
-        .dino-card {
-            height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%; /* 蛋形按鈕 */
-            border: 4px solid #F0B5C2;
-            background-color: #FFEC99;
-            cursor: pointer;
-            transition: all 0.5s ease;
+        /* --- 核心: 中央放大訊息提示框 (已改為右上角小提示) --- */
+        /* 移除原有的全屏遮罩 CSS */
+        
+        /* Game 1: 詞彙配對 (Dinosaur/Card Flip) */
+        .g1-card-item {
+            transition: transform 0.6s;
             transform-style: preserve-3d;
             position: relative;
+            height: 100%;
+            cursor: pointer;
+            border-radius: 1rem;
+            box-shadow: 0 6px 0 0 #D1A3A3;
         }
-        .dino-card.flipped {
-            transform: rotateY(180deg);
-        }
-        .dino-card-inner {
+        .g1-card-item.flipped { transform: rotateY(180deg); }
+        .g1-card-face {
             position: absolute;
             width: 100%;
             height: 100%;
+            backface-visibility: hidden;
+            border-radius: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            backface-visibility: hidden;
-            border-radius: 50%;
-            font-size: 1.5rem;
             font-weight: bold;
+            border: 4px solid;
+            user-select: none;
         }
-        .dino-card-front {
-            background-color: #BDE0FE; /* 蛋殼藍 */
-            color: #1E40AF;
+        .g1-card-front {
+            background-color: #FFC7C7; /* 粉色蛋殼 */
+            border-color: #FF8FAB;
+            font-size: 2rem;
+            color: #8B4513; /* 棕色恐龍紋理 */
         }
-        .dino-card-back {
-            background-color: #F8F8F8; /* 內容白 */
-            color: #333;
+        .g1-card-back {
+            background-color: #BDE0FE; /* 藍色內容面 */
+            border-color: #89CFF0;
             transform: rotateY(180deg);
-            padding: 5px;
+            flex-direction: column;
+            padding: 10px;
         }
-        .dino-card.matched {
-            background-color: #90EE90;
-            border-color: #3CB371;
+        .g1-card-matched {
+            background-color: #90EE90 !important;
+            border-color: #3CB371 !important;
+            box-shadow: none !important;
             cursor: default;
         }
-        /* 圖片/Emoji 自適應大小 */
-        .dino-card-back .emoji-content {
-            font-size: 3rem;
-        }
 
-        /* 遊戲 2: 機器人字母拼圖樣式 */
-        .robot-target {
-            min-height: 50px;
-            width: 50px;
-            border: 3px dashed #7B68EE;
-            background-color: #E6E6FA;
-            border-radius: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
+        /* Game 2: 字母拼圖 (Robot) */
+        .g2-letter-block {
+            transition: all 0.15s;
+            box-shadow: 0 3px 0 0 #4B5563; /* 機器人深灰 */
         }
-        .robot-part {
-            background-color: #FFD700; /* 金屬黃 */
-            color: #333;
-            padding: 8px 12px;
+        .g2-letter-block:active {
+            box-shadow: 0 1px 0 0 #4B5563;
+            transform: translateY(2px);
+        }
+        .g2-slot {
+            min-width: 50px;
+            height: 60px;
+            border: 4px dashed #93C5FD;
             border-radius: 8px;
-            cursor: grab;
-            box-shadow: 0 4px 0 0 #B8860B;
-            transition: all 0.1s;
-        }
-        
-        /* 遊戲 3: 超級英雄動作樣式 */
-        .superhero-option {
-            background-color: #BDE0FE;
-            color: #1E40AF;
-            font-weight: bold;
-            box-shadow: 0 4px 0 0 #87CEEB;
-            /* 讓按鈕內容居中並調整為文字/Emoji尺寸 */
+            background-color: #EFF6FF;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100px; /* 確保有足夠空間顯示 */
-        }
-        .superhero-option .verb-display {
             font-size: 1.5rem;
             font-weight: bold;
         }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.5s; }
 
-        /* 遊戲 4: 文法停車場樣式 */
-        .parking-spot {
-            background-color: #F0F8FF;
-            border: 2px solid #ADD8E6;
-            border-radius: 8px;
+
+        /* Game 4: 文法停車場 (Car/Parking Lot) - 停車場優化 */
+        /* 停車格按鈕 */
+        .g4-option-btn {
+            background-color: #9CA3AF; /* 灰色水泥停車格 */
+            color: #FFFFFF; /* 白色單字 */
+            border: 3px solid #6B7280;
+            font-size: 1.25rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 0 #4B5563; /* 深灰陰影 */
+        }
+        .g4-option-btn:active {
+            box-shadow: 0 2px 0 0 #4B5563;
+            transform: translateY(2px);
+        }
+        /* 句子區域 - 模擬車道/車身 */
+        .g4-sentence-box {
+            background-color: #FEF9C3; /* 淺黃色車身 */
+            border: 4px solid #FCD34D;
+            border-radius: 20px 20px 10px 10px; /* 模擬車頂的圓弧 */
+            padding: 30px 20px 20px;
+            box-shadow: 0 8px 0 0 #F59E0B;
+            position: relative;
+            margin-top: 15px; /* 留出車燈空間 */
+        }
+        /* 模擬車燈和標題 */
+        .g4-sentence-box::before {
+            content: "🚗"; /* 卡通車圖示 */
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            font-size: 2.5rem;
+            line-height: 1;
+        }
+        /* 模擬輪胎 */
+        .g4-sentence-box::after {
+            content: "";
+            position: absolute;
+            bottom: -15px;
+            left: 10%;
+            right: 10%;
+            height: 10px;
+            background-image: radial-gradient(circle at 10px 5px, #4B5563 8px, transparent 8px),
+                              radial-gradient(circle at calc(100% - 10px) 5px, #4B5563 8px, transparent 8px);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+        }
+
+        .g4-sentence-part {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1F2937; /* 深灰字體 */
+        }
+        /* 填空區 - 模擬空白車位 */
+        .g4-blank {
+            min-width: 120px;
+            height: 40px;
+            background-color: #E5E7EB; /* 淺灰底色 */
+            border: 3px dashed #6B7280;
+            border-radius: 6px;
+            display: inline-block;
+            line-height: 40px;
+            text-align: center;
+            color: #374151;
+            font-weight: bold;
+            margin: 0 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .g4-blank-filled {
+            background-color: #3CB371; /* 綠色填入 */
+            color: white;
+            border: 3px solid #3CB371;
+        }
+
+        /* Game 6: 尋寶 (Treasure Map) */
+        .g6-question-box {
+            background-color: #FEF3C7;
+            border: 4px solid #FBBF24;
+            box-shadow: 0 8px 0 0 #D97706;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        /* Game 7: 比較級 (Balance Scale) - 黃/橘色調 */
+        .g7-header {
+            background-color: #F97316; /* Orange 600 */
+            border-color: #9A3412; /* Darker Orange */
+        }
+        .g7-image-box {
+            min-height: 150px;
+            background-color: #FFF;
+            border: 4px solid #FCD34D; /* Yellow */
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             padding: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 2px 0 0 #87CEEB;
+        }
+        .g7-question-area {
+            background-color: #FEF9C3;
+            border: 2px solid #FBBF24;
+        }
+        .g7-option-btn-style {
+            background-color: #FFC7C7; /* Primary Pink */
+            color: #8B4513; /* Brown text */
+            box-shadow: 0 3px 0 0 #D1A3A3;
+        }
+        .g7-option-btn-style:hover {
+             background-color: #FF8FAB; 
         }
         
-        /* 遊戲 5: 誰說謊了? 樣式 */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0) scale(1.0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px) scale(1.02); }
-            20%, 40%, 60%, 80% { transform: translateX(5px) scale(1.02); }
-        }
-        .shaking {
-            animation: shake 0.5s ease-in-out;
-        }
-        .tongue-container {
-             position: absolute;
-             bottom: 0px;
-             left: 50%;
-             transform: translateX(-50%);
-             z-index: 10;
-        }
-        .tongue-out {
-             display: inline-block;
-             animation: tongue 0.5s forwards;
-             color: #FF4500;
-             font-size: 2rem;
-        }
-
-        /* 遊戲 6: 介系詞尋寶樣式 */
-        .city-map {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            background-color: #F0F0F0;
-            padding: 20px;
-            border-radius: 12px;
-        }
-        .location-spot {
-            height: 100px;
-            background-color: #fff;
-            border: 3px solid #7B68EE;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 3rem;
-            transition: all 0.2s;
-        }
-        .location-spot img {
-            max-width: 80%;
-            max-height: 80%;
-            object-fit: contain;
+        /* Admin Edit Styles */
+        .admin-input {
+            width: 100%;
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            border: 1px solid #ccc;
             border-radius: 4px;
+            font-size: 0.9rem;
         }
-        .location-spot .content {
-            font-size: 2rem;
-        }
-
-        /* 遊戲 7: 比較級傳送門樣式 */
-        .portal-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 150px;
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            font-size: 5rem;
-            position: relative;
-        }
-        /* 移除 .concept 樣式 */
-        .portal-item img {
-            max-width: 100%; /* 圖片填滿 */
-            max-height: 100%;
-            object-fit: contain;
-            margin-bottom: 0;
-            border-radius: 12px;
-            min-height: 150px;
-        }
-        .portal-button {
-            background-color: #BDE0FE;
-            color: #1E40AF;
-            font-weight: bold;
-            box-shadow: 0 4px 0 0 #87CEEB;
-        }
-        .portal-button.correct {
-            background-color: #90EE90;
-            box-shadow: 0 4px 0 0 #3CB371;
-            animation: pulse 0.8s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
     </style>
-
-    <script>
-        // 設定 Tailwind 配置, 使用柔和可愛的馬卡龍配色
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'primary-pink': '#FFC7C7',      // 主題粉 (柔和可愛)
-                        'secondary-blue': '#BDE0FE',    // 輔助藍
-                        'accent-yellow': '#FFEC99',     // 強調黃
-                        'background-light': '#F8F8F8',  // 淺背景
-                        'keyboard-bg': '#FFF5D6',       // 鍵盤區塊背景
-                    },
-                    boxShadow: {
-                        'cute': '0 4px 0 0 #D1A3A3',    // 按鈕立體陰影
-                        'key-active': '0 2px 0 0 #D1A3A3', // 按下時的陰影
-                    }
-                }
-            }
-        }
-    </script>
 </head>
 <body class="bg-background-light min-h-screen game-font flex flex-col items-center p-4">
 
-    <!-- 訊息提示框 -->
-    <div id="message-box" class="fixed top-4 right-4 bg-red-500 text-white p-3 rounded-lg shadow-xl z-50 transition-opacity duration-300 hidden">
-        <p id="message-content"></p>
+    <!-- 訊息提示框 (頂部右側 - 已修正為非中央放大) -->
+    <div id="message-box" class="fixed top-4 right-4 z-50 opacity-0 transition-all duration-300 transform translate-y-[-20px] pointer-events-none max-w-sm">
+        <div id="message-content-wrapper" class="p-3 rounded-lg shadow-xl">
+            <p id="message-content" class="text-sm font-semibold"></p>
+        </div>
     </div>
 
     <!-- 頂部標題與導航 -->
     <header class="w-full max-w-6xl text-center mb-4 p-4 bg-primary-pink rounded-2xl shadow-lg border-b-4 border-pink-400">
         <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-wider">
             <!-- 可愛小豬圖示 (SVG) -->
-            <svg class="h-10 w-10 md:h-12 md:w-12 inline-block mr-3 transform -translate-y-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM15 9C15.8284 9 16.5 8.32843 16.5 = 7.5C16.5 6.67157 15.8284 6 15 6C14.1716 6 13.5 6.67157 13.5 7.5C13.5 8.32843 14.1716 9 15 9ZM9 9C9.82843 9 10.5 8.32843 10.5 7.5C10.5 6.67157 9.82843 6 9 6C8.17157 6 7.5 6.67157 7.5 7.5C7.5 8.32843 8.17157 9 9 9Z" fill="#FF8FAB"/>
-                <path d="M12 17C14.2091 17 16 15.2091 16 13C16 10.7909 14.2091 9 12 9C9.79086 9 8 10.7909 8 13C8 15.2091 9.79086 17 12 17Z" fill="#F0B5C2"/>
-                <circle cx="11" cy="13" r="1" fill="#FF8FAB"/>
-                <circle cx="13" cy="13" r="1" fill="#FF8FAB"/>
-            </svg>
-            英文遊戲樂園
+            <svg class="h-10 w-10 md:h-12 md:w-12 inline-block mr-3 transform -translate-y-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM15 9C15.8284 9 16.5 8.32843 16.5 = 7.5C16.5 6.67157 15.8284 6 15 6C14.1716 6 13.5 6.67157 13.5 7.5C13.5 8.32843 14.1716 9 15 9ZM9 9C9.82843 9 10.5 8.32843 10.5 7.5C10.5 6.67157 9.82843 6 9 6C8.17157 6 7.5 6.67157 7.5 7.5C7.5 8.32843 8.1716 9 9 9Z" fill="#FF8FAB"/><path d="M12 17C14.2091 17 16 15.2091 16 13C16 10.7909 14.2091 9 12 9C9.79086 9 8 10.7909 8 13C8 15.2091 9.79086 17 12 17Z" fill="#F0B5C2"/><circle cx="11" cy="13" r="1" fill="#FF8FAB"/><circle cx="13" cy="13" r="1" fill="#FF8FAB"/></svg>
+            英文學習遊戲樂園
+        
         </h1>
     </header>
 
-    <!-- 導航列 (4 欄式兩列佈局) -->
+    <!-- 導航列 -->
     <nav class="w-full max-w-6xl mb-6">
-        <div class="grid grid-cols-4 gap-2 md:gap-4 justify-center">
-            
-            <button data-game="game1" id="tab-game1" onclick="changeGame('game1')" class="tab-btn">🦖 詞彙配對</button>
-            <button data-game="game2" id="tab-game2" onclick="changeGame('game2')" class="tab-btn">🤖 字母拼圖</button>
-            <button data-game="game3" id="tab-game3" onclick="changeGame('game3')" class="tab-btn">🦸 動作指令</button>
-            <button data-game="game4" id="tab-game4" onclick="changeGame('game4')" class="tab-btn">🚗 文法停車</button>
-            
-            <button data-game="game5" id="tab-game5" onclick="changeGame('game5')" class="tab-btn">🤥 誰說謊了?</button>
-            <button data-game="game6" id="tab-game6" onclick="changeGame('game6')" class="tab-btn">🗺️ 介系詞尋寶</button>
-            <button data-game="game7" id="tab-game7" onclick="changeGame('game7')" class="tab-btn">⚖️ 比較級</button>
-            <button data-game="admin" id="tab-admin" onclick="changeGame('admin')" class="tab-btn">⚙️ 單字後台</button>
+        <div class="grid grid-cols-4 gap-2 md:gap-4 justify-center" id="game-nav">
+            <button data-game="game1" class="tab-btn">🦖 詞彙配對</button>
+            <button data-game="game2" class="tab-btn">🤖 字母拼圖</button>
+            <button data-game="game3" class="tab-btn">🦸 動作指令</button>
+            <button data-game="game4" class="tab-btn">🚗 文法停車場</button>
+            <button data-game="game5" class="tab-btn">🤥 誰說謊了?</button>
+            <button data-game="game6" class="tab-btn">🗺️ 尋寶問答</button>
+            <button data-game="game7" class="tab-btn">⚖️ 比較級</button>
+            <button data-game="admin" class="tab-btn">⚙️ 後台</button>
         </div>
     </nav>
 
     <!-- 主內容區 -->
     <main id="game-content" class="w-full max-w-6xl bg-white p-4 md:p-8 rounded-2xl shadow-xl border-4 border-secondary-blue flex flex-col space-y-6 min-h-[600px]">
         <div class="flex justify-center items-center h-full">
-            <p class="text-xl text-gray-500">正在載入應用程式...</p>
+            <p class="text-xl text-gray-500">應用程式載入中...</p>
         </div>
     </main>
     
     <script>
-        // --- 全域設定與工具 (與程式碼 1 結構一致) ---
-        const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split(''); 
-        const LOCAL_STORAGE_KEY = 'G_CustomWords_Unified_V2_AI'; // 統一的 localStorage key
-        const G4_BINGO_SIZE = 4;
+        // --- 全域設定與工具 ---
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-pink': '#FFC7C7',      
+                        'secondary-blue': '#BDE0FE',    
+                        'accent-yellow': '#FFEC99',     
+                        'background-light': '#F8F8F8',  
+                        'keyboard-bg': '#FFF5D6',       
+                    },
+                    boxShadow: {
+                        'cute': '0 4px 0 0 #D1A3A3',    
+                    }
+                }
+            }
+        }
         
-        let currentGame = 'game1'; // 遊戲啟動時的當前遊戲
+        const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
+        const LOCAL_STORAGE_KEY = 'GAMES_CUSTOM_DATA_V3';
+        const MAX_QUESTIONS = { g3: 5, g4: 10, g5: 5, g6: 10, g7: 5 }; 
+
+        let currentGame = 'game1'; 
+        let localData = {}; 
         
-        // 移除 AI 相關變數
-        let isGeneratingImage = false; 
+        // **修正並新增**：用於追蹤 Admin 列表狀態
+        let selectedWordIds = new Set();
+        let editingItemId = null; // 新增：追蹤當前正在編輯的項目 ID
         
-        // 最小項目要求地圖
-        const MIN_REQUIRED_MAP = {
-            game1: 4, // 4 pairs for matching (4 unique items in the source list)
-            game2: 1, 
-            game3: 3, // At least 3 options
-            game4: 1, 
-            game5: 1,
-            game6: 1,
-            game7: 1
+        // 額外的通用詞彙庫 (用於 G3/G6 生成干擾選項)
+        const ALL_VERBS = ['JUMP', 'RUN', 'WALK', 'SWIM', 'SLEEP', 'READ', 'DANCE', 'SING', 'WRITE', 'TALK', 'EAT', 'DRINK'];
+        const ALL_ADJECTIVES = ['TALL', 'SHORT', 'FAST', 'SLOW', 'HAPPY', 'SAD', 'BIG', 'SMALL', 'OLD', 'NEW'];
+        const GENERAL_GRAMMAR = ['IS', 'AM', 'ARE', 'WAS', 'WERE', 'DO', 'DOES', 'DID', 'HAS', 'HAVE', 'HAD', 'IN', 'ON', 'AT', 'TO', 'FOR', 'OF', 'MUCH', 'MANY', 'HOW'];
+        
+        // --- G7 輔助工具：反義詞映射表 (Antonym Map) ---
+        const ANTONYM_MAP = {
+            'TALL': 'SHORT', 'SHORT': 'TALL',
+            'BIG': 'SMALL', 'SMALL': 'BIG',
+            'FAST': 'SLOW', 'SLOW': 'FAST',
+            'HAPPY': 'SAD', 'SAD': 'HAPPY',
+            'LONG': 'SHORT', 'OLD': 'NEW', 'NEW': 'OLD',
+            'GOOD': 'BAD', 'BAD': 'GOOD'
         };
 
-        // 內建單字庫 (用於 fallback)
-        const DICTIONARY_MAP = {
-            game1: [ // Dino Egg Match: Word/Emoji pairs
-                { id: crypto.randomUUID(), word: "T-REX", emoji: "🦖" }, 
-                { id: crypto.randomUUID(), word: "EGG", emoji: "🥚" },
-                { id: crypto.randomUUID(), word: "CAR", emoji: "🚗" },
-                { id: crypto.randomUUID(), word: "SUN", emoji: "☀️" },
-                // ADDED ITEMS from user files
-                { id: crypto.randomUUID(), word: "WATER", emoji: "💧" }, 
-                { id: crypto.randomUUID(), word: "COLD", emoji: "❄️" },
-                { id: crypto.randomUUID(), word: "BIRD", emoji: "🐦" },
-                { id: crypto.randomUUID(), word: "FALL", emoji: "🍁" }
+        // --- 預設單字庫 (與新遊戲結構匹配) ---
+        const DEFAULT_WORDS = {
+            g1_words: [
+                { id: 'w1', word: 'CAKE', emoji: '🎂' }, { id: 'w2', word: 'PIZZA', emoji: '🍕' },
+                { id: 'w3', word: 'CAR', emoji: '🚗' }, { id: 'w4', word: 'BIRD', emoji: '🐦' },
             ],
-            game2: [ // Robot Letter Puzzle: Simple Spelling
-                { id: crypto.randomUUID(), word: "ROBOT" }, { id: crypto.randomUUID(), word: "BIKE" },
-                // ADDED ITEMS from user files
-                { id: crypto.randomUUID(), word: "BLUE" }, { id: crypto.randomUUID(), word: "LIVE" },
-                { id: crypto.randomUUID(), word: "KNOW" }, { id: crypto.randomUUID(), word: "VERY" },
-                { id: crypto.randomUUID(), word: "WATCH" }, { id: crypto.randomUUID(), word: "WALK" }
+            g2_words: ['ROBOT', 'COMPUTER', 'SPACESHIP', 'BUTTON', 'MEMORY'],
+            g3_actions: [
+                { id: 'a1', verb: 'JUMP' }, { id: 'a2', verb: 'SWIM' },
+                { id: 'a3', verb: 'SLEEP' }, { id: 'a4', verb: 'READ' },
+                { id: 'a5', verb: 'DANCE' },
             ],
-            game3: [ // Superhero Action: Action Verbs (只保留 Verb)
-                { id: crypto.randomUUID(), verb: "JUMP" }, 
-                { id: crypto.randomUUID(), verb: "RUN" },
-                { id: crypto.randomUUID(), verb: "CLAP" },
-                // ADDED ITEMS from user files
-                { id: crypto.randomUUID(), verb: "WASH" }, 
-                { id: crypto.randomUUID(), verb: "SING" },
-                { id: crypto.randomUUID(), verb: "SKIP" },
-                { id: crypto.randomUUID(), verb: "GROW" }
+            g4_grammar: [
+                // 修正 G4 預設數據，以符合新的簡化格式：Sentence(用 __ 代替空格), Answer
+                { id: 'g1', sentence: 'I __ playing my toys.', answer: 'AM' },
+                { id: 'g2', sentence: 'She __ a doctor.', answer: 'IS' },
+                { id: 'g3', sentence: 'The cat is __ the box.', answer: 'IN' },
+                { id: 'g4', sentence: 'They __ happy.', answer: 'ARE' },
+                { id: 'g5', sentence: 'He __ milk every day.', answer: 'DRINKS' },
             ],
-            game4: [ // Grammar Parking Lot: Simple Sentences
-                { id: crypto.randomUUID(), pattern: "I ____ HAPPY.", options: ["AM", "IS", "ARE"], answer: "AM" },
-                { id: crypto.randomUUID(), pattern: "HE ____ SAD.", options: ["AM", "IS", "ARE"], answer: "IS" }
+            g5_true_false: [
+                { id: 't1', statement: 'This is a small dog.', imageUrl: 'https://placehold.co/150x120/8254A9/FFFFFF?text=BIG+DOG', answer: false },
+                { id: 't2', statement: 'The apple is red.', imageUrl: 'https://placehold.co/150x120/FF6347/FFFFFF?text=RED+APPLE', answer: true },
+                { id: 't3', statement: 'A bird can swim.', imageUrl: 'https://placehold.co/150x120/4682B4/FFFFFF?text=BLUE+BIRD', answer: false },
             ],
-            game5: [ // Who's Lying? (Statement, Answer)
-                { id: crypto.randomUUID(), statement: "A cat has four legs.", answer: "TRUE" },
-                { id: crypto.randomUUID(), statement: "The sun is green.", answer: "FALSE" },
-                // ADDED ITEMS from user files
-                { id: crypto.randomUUID(), statement: "Animals need shelter.", answer: "TRUE" },
-                { id: crypto.randomUUID(), statement: "All plants have flowers and fruits.", answer: "FALSE" },
-                { id: crypto.randomUUID(), statement: "Salt water is found in the ocean.", answer: "TRUE" }
+            g6_qa_match: [
+                { id: 'q1', question: 'How are you?', answer: "I'M FINE, THANK YOU." },
+                { id: 'q2', question: 'What is your name?', answer: "MY NAME IS TOM." },
+                { id: 'q3', question: 'Where is the library?', answer: "IT IS NEXT TO THE BANK." },
             ],
-            game6: [ // Preposition Hunt: (Instruction, KeyImage, LocAImage, LocBImage, AnswerKey)
-                { id: crypto.randomUUID(), instruction: "The key is next to the house.", keyImage: "🔑", imageA: "🏠", imageB: "🌳", answerKey: "🔑", urlKey: "", urlA: "", urlB: "" },
-                // ADDED ITEM from user files
-                { id: crypto.randomUUID(), instruction: "The hospital is next to the fire station.", keyImage: "HOSPITAL", imageA: "FIRE STATION", imageB: "POLICE STATION", answerKey: "HOSPITAL", urlKey: "🏥", urlA: "🚒", urlB: "🚓" }
+            g7_comparatives: [
+                { id: 'c1', nounA: 'Elephant', nounB: 'Mouse', adj: 'BIG', urlA: 'https://placehold.co/150x120/3CB371/FFFFFF?text=A', urlB: 'https://placehold.co/150x120/FFD700/000000?text=B' },
+                { id: 'c2', nounA: 'Pencil', nounB: 'Ruler', adj: 'LONG', urlA: 'https://placehold.co/150x120/87CEEB/FFFFFF?text=A', urlB: 'https://placehold.co/150x120/FA8072/FFFFFF?text=B' },
             ],
-            game7: [ // Comparative Portal: (Noun, Adj, Comparative, urlA, urlB)
-                { id: crypto.randomUUID(), noun: "SNAKE", adj: "LONG", comparative: "LONGER", urlA: "https://placehold.co/100x150/FFEC99/333?text=SNAKE_A", urlB: "https://placehold.co/150x150/FFEC99/333?text=SNAKE_B" },
-                 // ADDED ITEMS from user files
-                { id: crypto.randomUUID(), noun: "UMBRELLA", adj: "GOOD", comparative: "BETTER", urlA: "https://placehold.co/100x150/BDE0FE/333?text=UMBRELLA_OLD", urlB: "https://placehold.co/150x150/BDE0FE/333?text=UMBRELLA_NEW" },
-                { id: crypto.randomUUID(), noun: "BUILDING", adj: "TALL", comparative: "TALLER", urlA: "https://placehold.co/100x150/FFC7C7/333?text=BUILDING_SHORT", urlB: "https://placehold.co/150x150/FFC7C7/333?text=BUILDING_TALL" },
-                { id: crypto.randomUUID(), noun: "HAT", adj: "NEW", comparative: "NEWER", urlA: "https://placehold.co/100x150/90EE90/333?text=HAT_OLD", urlB: "https://placehold.co/150x150/90EE90/333?text=HAT_NEW" }
-            ]
         };
 
-        const NUM_GAME1_CARDS = 8; // 4 pairs
 
-        let localCustomWords = {}; // 儲存從 localStorage 載入的自訂單字
-
+        // --- 遊戲狀態管理 ---
         let state = {
-            // Pool Management
-            pools: {
-                game1: { pool: [], missed: [] },
-                game2: { pool: [], missed: [] },
-                game3: { pool: [], missed: [] },
-                game4: { pool: [], missed: [] },
-                game5: { pool: [], missed: [] },
-                game6: { pool: [], missed: [] },
-                game7: { pool: [], missed: [] },
-            },
-            // Game 1 (Dino Egg)
-            g1_cards: [],
-            g1_flipped: [],
-            g1_matchCount: 0,
-            g1_currentQuestionItem: null, 
-            // Game 2 (Robot Puzzle)
-            g2_currentWord: '',
-            g2_shuffledLetters: [],
-            g2_userLetters: [], 
-            g2_targetLetters: [], 
-            g2_currentQuestionItem: null,
-            // Game 3 (Superhero Action)
-            g3_currentAction: null, 
-            g3_score: 0,
-            g3_currentQuestionItem: null,
-            // Game 4 (Parking Lot)
-            g4_currentSentence: null,
-            g4_isLocked: false,
-            g4_currentQuestionItem: null,
-            // Game 5 (Who's Lying?)
-            g5_currentStatement: null,
-            g5_gameStatus: 'ready',
-            g5_shaker: { true: false, false: false }, 
-            g5_currentQuestionItem: null,
-            // Game 6 (Preposition Hunt)
-            g6_currentQuestion: null,
-            g6_isLocked: false,
-            g6_score: 0,
-            // Game 7 (Comparative Portal)
+            // G1: Match Card
+            g1_matchCards: [], g1_flippedCards: [], g1_matchCount: 0, g1_gameStatus: 'ready',
+            // G2: Spelling Robot
+            g2_currentWord: '', g2_shuffledLetters: [], g2_answerSlots: [], g2_gameStatus: 'ready',
+            // Quizzes (G3, G4, G5, G6, G7)
+            currentQuizSet: [], currentQIndex: 0, score: 0, gameStatus: 'ready', MAX_QUESTIONS_KEY: 'g3',
+            // G4 specific: store the current sentence with the filled answer
+            g4_displaySentence: '',
+            // G6 Treasure
+            g6_treasures: 0, 
+            // G7 Comparative: { ...currentQ, isAisB: boolean }
             g7_currentQuestion: null,
-            g7_isLocked: false,
-            g7_score: 0,
-            // Admin
-            admin_currentGameKey: 'game1' 
         };
 
-
-        // --- TTS & Utility Functions ---
+        // --- TTS & Utility (保持不變) ---
         async function callTTS(text) {
             if (!('speechSynthesis' in window)) {
-                MessageBox.show("瀏覽器不支持語音播放功能。", true);
+                console.warn("SpeechSynthesis not supported.");
                 return;
             }
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-US'; 
             utterance.rate = 0.9;
+            
             await new Promise(resolve => {
                 utterance.onend = resolve;
                 utterance.onerror = (e) => { console.error("SpeechSynthesis error:", e); resolve(); };
@@ -442,14 +368,30 @@
             });
         }
 
+        // --- 修正後的中央放大訊息提示框 ---
         const MessageBox = {
             show: (message, isError = true) => {
                 const box = document.getElementById('message-box');
                 const content = document.getElementById('message-content');
+                const wrapper = document.getElementById('message-content-wrapper');
+                
+                // 設置內容
                 content.textContent = message;
-                box.classList.remove('hidden', 'bg-red-500', 'bg-green-500');
-                box.classList.add(isError ? 'bg-red-500' : 'bg-green-500');
-                setTimeout(() => box.classList.add('hidden'), 3000);
+                
+                // 設置顏色和樣式
+                const bgColor = isError ? 'bg-red-500' : 'bg-green-500';
+                wrapper.classList.remove('bg-red-500', 'bg-green-500'); // 清除舊顏色
+                wrapper.classList.add(bgColor, 'text-white');
+                
+                // 顯示訊息 (0.3s transition time defined in HTML class)
+                box.classList.remove('opacity-0', 'translate-y-[-20px]');
+                box.classList.add('opacity-100', 'translate-y-0');
+                
+                // 隱藏訊息 (0.5秒後)
+                setTimeout(() => {
+                    box.classList.remove('opacity-100', 'translate-y-0');
+                    box.classList.add('opacity-0', 'translate-y-[-20px]');
+                }, 500); // 修正為 500ms
             }
         };
 
@@ -457,113 +399,68 @@
             let temp = [...array];
             for (let i = temp.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [temp[i], temp[j]] = [temp[j], temp[i]];
+                [temp[i], temp[j]] = [temp[i], temp[j]];
             }
             return temp;
         }
+        
+        function formatDisplayWord(word, isSentenceStart = false) {
+            if (typeof word !== 'string') return word;
+            
+            let displayWord = word.replace(/_/g, ' ');
 
-        // --- LocalStorage Logic ---
+            if (displayWord.length === 1 && displayWord.toUpperCase() === 'I') return 'I';
+            
+            if (isSentenceStart && displayWord.length > 0) {
+                 return displayWord.charAt(0).toUpperCase() + displayWord.slice(1).toLowerCase();
+            }
+
+            return displayWord.toLowerCase();
+        }
+
+        // --- LocalStorage 存儲功能 (統一管理所有遊戲數據) ---
         function loadWordsFromLocal() {
             try {
                 const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-                const loadedData = stored ? JSON.parse(stored) : {};
+                const loaded = stored ? JSON.parse(stored) : {};
                 
-                // Initialize localCustomWords with default values or loaded data
-                for (const key in DICTIONARY_MAP) {
-                    localCustomWords[key] = Array.isArray(loadedData[key]) ? loadedData[key] : DICTIONARY_MAP[key];
+                localData = JSON.parse(JSON.stringify(DEFAULT_WORDS));
+                
+                for (const key in loaded) {
+                    if (Array.isArray(loaded[key])) {
+                        localData[key] = loaded[key].map(item => {
+                            if (typeof item === 'object' && item !== null && !item.id) {
+                                return { ...item, id: crypto.randomUUID() };
+                            }
+                            return item;
+                        }).filter(item => item !== null && item !== undefined); 
+                    }
                 }
             } catch (e) {
                 console.error("Error loading words from local storage:", e);
-                localCustomWords = DICTIONARY_MAP; // Fallback to default
+                localData = DEFAULT_WORDS;
             }
         }
 
         function saveWordsToLocal() {
             try {
-                let dataToSave = {};
-                for (const key in localCustomWords) {
-                    dataToSave[key] = localCustomWords[key];
-                }
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localData));
             } catch (e) {
                 console.error("Error saving words to local storage:", e);
                 MessageBox.show("無法保存單字到您的瀏覽器。", true);
             }
         }
-        
-        function getWordList(gameKey) {
-            const custom = localCustomWords[gameKey];
-            return (Array.isArray(custom) && custom.length > 0) ? custom : DICTIONARY_MAP[gameKey];
-        }
 
-        function getItemKey(item, gameKey) {
-            if (gameKey === 'game1') return item.word.toUpperCase();
-            if (gameKey === 'game2') return item.word.toUpperCase();
-            if (gameKey === 'game3') return item.verb.toUpperCase();
-            if (gameKey === 'game4') return item.pattern.toUpperCase();
-            if (gameKey === 'game5') return item.statement; 
-            if (gameKey === 'game6') return item.instruction; 
-            if (gameKey === 'game7') return `${item.noun.toUpperCase()}_${item.adj.toUpperCase()}`;
-            return null;
-        }
-
-        function drawNextItem(gameKey) {
-             const pools = state.pools[gameKey];
-            const sourceList = getWordList(gameKey);
-
-            if (sourceList.length === 0) return null;
-
-            if (pools.pool.length === 0 && pools.missed.length === 0) {
-                pools.pool = [...sourceList];
-                pools.missed = [];
-                MessageBox.show(`[${gameKey}] 已開始新一輪單字學習！`, false);
-            }
-
-            let item = null;
-            let source = '';
-
-            if (pools.missed.length > 0) {
-                const index = Math.floor(Math.random() * pools.missed.length);
-                item = pools.missed[index];
-                source = 'missed';
-            } else if (pools.pool.length > 0) {
-                const index = Math.floor(Math.random() * pools.pool.length);
-                item = pools.pool.splice(index, 1)[0];
-                source = 'pool';
-            }
-            
-            return item ? { item, source } : null;
-        }
-
-        function updatePools(gameKey, item, isCorrect) {
-            const pools = state.pools[gameKey];
-            const itemKey = getItemKey(item, gameKey);
-
-            if (isCorrect) {
-                for (let i = pools.missed.length - 1; i >= 0; i--) {
-                    if (getItemKey(pools.missed[i], gameKey) === itemKey) {
-                        pools.missed.splice(i, 1);
-                        break;
-                    }
-                }
-            } else {
-                let alreadyMissed = pools.missed.some(missedItem => getItemKey(missedItem, gameKey) === itemKey);
-                if (!alreadyMissed) {
-                    pools.missed.push(item);
-                }
-            }
-        }
-        
-        // --- Core App Control ---
+        // --- 核心應用程式控制 ---
         function setTabActive(gameName) {
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('bg-primary-pink', 'text-white', 'shadow-xl', 'scale-105');
-                btn.classList.add('bg-white', 'text-gray-700', 'shadow-md');
+                btn.classList.add('bg-white', 'text-gray-700', 'shadow-md', 'hover:bg-secondary-blue');
             });
 
-            const activeTab = document.getElementById(`tab-${gameName}`);
+            const activeTab = document.querySelector(`.tab-btn[data-game="${gameName}"]`);
             if (activeTab) {
-                activeTab.classList.remove('bg-white', 'text-gray-700', 'shadow-md');
+                activeTab.classList.remove('bg-white', 'text-gray-700', 'shadow-md', 'hover:bg-secondary-blue');
                 activeTab.classList.add('bg-primary-pink', 'text-white', 'shadow-xl', 'scale-105');
             }
         }
@@ -576,1206 +473,1302 @@
         }
 
         function renderApp() {
-            loadWordsFromLocal(); 
+            loadWordsFromLocal(); // 每次渲染前載入
+            const container = document.getElementById('game-content');
+            
+            if (!container) {
+                console.error("Error: Game content container not found during renderApp.");
+                return; 
+            }
+
             switch (currentGame) {
-                case 'game1': initGame1(true); break;
-                case 'game2': initGame2(true); break;
-                case 'game3': initGame3(true); break;
-                case 'game4': initGame4(true); break;
-                case 'game5': initGame5(true); break;
-                case 'game6': initGame6(true); break;
-                case 'game7': initGame7(true); break;
+                case 'game1': initGame1(); break;
+                case 'game2': initGame2(); break;
+                case 'game3': initGame3(); break;
+                case 'game4': initGame4(); break;
+                case 'game5': initGame5(); break;
+                case 'game6': initGame6(); break;
+                case 'game7': initGame7(); break; 
                 case 'admin': renderWordAdmin(); break;
-                default: document.getElementById('game-content').innerHTML = `<p class="text-xl text-gray-500 text-center p-10">請選擇一個遊戲</p>`;
+                default: 
+                    container.innerHTML = `<div class="flex justify-center items-center h-full min-h-[500px]"><p class="text-3xl text-gray-500 text-center p-10">請透過上方導航列選擇一個遊戲開始！</p></div>`;
+                    break;
             }
         }
 
-        window.onload = function() {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.add('bg-white', 'hover:bg-secondary-blue', 'py-2', 'px-3', 'md:px-4', 'rounded-full', 'text-xs', 'md:text-sm', 'font-bold', 'text-gray-700', 'transition', 'duration-300', 'shadow-md');
-            });
-            setTabActive(currentGame);
-            renderApp();
+        // --- Quiz Game Helper Functions (適用於 G3, G4, G5, G6, G7) ---
+        function setupQuiz(dataKey, gameId, maxQOverride = null) {
+            const source = localData[dataKey];
+            const maxQ = maxQOverride || MAX_QUESTIONS[gameId];
+            
+            if (source.length === 0) { 
+                MessageBox.show("請在後台新增題目！", true); 
+                return false;
+            }
+
+            state.currentQuizSet = shuffleArray(source).slice(0, maxQ);
+            state.currentQIndex = 0;
+            state.score = 0;
+            state.gameStatus = 'playing';
+            state.MAX_QUESTIONS_KEY = gameId; 
+            return true;
+        }
+
+        function checkQuizEnd(renderFunc) {
+            if (state.currentQIndex >= state.currentQuizSet.length) {
+                state.gameStatus = 'finished';
+                MessageBox.show(`遊戲結束！您的得分是 ${state.score} / ${state.currentQuizSet.length} 🎉`, false);
+                renderFunc();
+                return true;
+            }
+            return false;
+        }
+
+        function goToNextQuestion(renderFunc) {
+            state.currentQIndex++;
+            if (!checkQuizEnd(renderFunc)) {
+                renderFunc();
+            }
         }
         
-        // --- Game 1 (Dino Egg Match) Logic ---
-        function initGame1(isInit = false) {
-            const requiredPairs = NUM_GAME1_CARDS / 2;
-            const sourceList = getWordList('game1');
+        // --- Game 1: 詞彙配對 (🦖) ---
+        function initGame1() {
+            const source = localData.g1_words;
+            if (source.length === 0) { MessageBox.show("請在後台新增詞彙配對單字！", true); return; }
 
-            if (sourceList.length < requiredPairs) {
-                 renderGame1(true); return;
-            }
-            
-            let selectedPairs = shuffleArray(sourceList).slice(0, requiredPairs);
-            
-            selectedPairs.forEach(pair => {
-                const key = getItemKey(pair, 'game1');
-                const poolIndex = state.pools.game1.pool.findIndex(p => getItemKey(p, 'game1') === key);
-                if (poolIndex !== -1) {
-                    state.pools.game1.pool.splice(poolIndex, 1);
-                }
-            });
-
-            state.g1_cards = [];
-            state.g1_flipped = [];
+            const limitedSource = shuffleArray(source).slice(0, 4); 
             state.g1_matchCount = 0;
-            state.g1_currentQuestionItem = selectedPairs;
-            
-            let cardValues = []; 
-            selectedPairs.forEach((pair, index) => {
-                const groupId = `match-${index}`; 
-                // Card 1: Emoji (Image/Emoji Side)
-                cardValues.push({ id: crypto.randomUUID(), value: pair.emoji, display: pair.emoji, type: 'emoji', groupId, matched: false, flipped: false, key: getItemKey(pair, 'game1') });
-                // Card 2: Word (Word Side)
-                cardValues.push({ id: crypto.randomUUID(), value: pair.word.toUpperCase(), display: pair.word.toUpperCase(), type: 'word', groupId, matched: false, flipped: false, key: getItemKey(pair, 'game1') });
+            state.g1_flippedCards = [];
+            state.g1_gameStatus = 'playing';
+
+            let cardValues = [];
+            limitedSource.forEach((item, index) => {
+                const groupId = `match-${item.word}-${index}`;
+
+                cardValues.push({ id: crypto.randomUUID(), type: 'WORD', value: item.word, groupId, matched: false, flipped: false });
+                cardValues.push({ id: crypto.randomUUID(), type: 'EMOJI', value: item.emoji, groupId, matched: false, flipped: false });
             });
-            
-            state.g1_cards = shuffleArray(cardValues);
+
+            state.g1_matchCards = shuffleArray(cardValues);
             renderGame1();
         }
 
-        function handleCardClickG1(id) {
-            const cardIndex = state.g1_cards.findIndex(c => c.id === id);
-            const card = state.g1_cards[cardIndex];
+        async function handleCardClickG1(id) {
+            const cardIndex = state.g1_matchCards.findIndex(c => c.id === id);
+            const card = state.g1_matchCards[cardIndex];
 
-            if (!card || card.matched || card.flipped || state.g1_flipped.length === 2) return;
+            if (!card || card.matched || card.flipped || state.g1_flippedCards.length === 2) return;
 
             card.flipped = true;
-            state.g1_flipped.push(card);
-            renderGame1(); 
-
-            if (state.g1_flipped.length === 2) {
-                const [card1, card2] = state.g1_flipped;
-                const isMatch = card1.groupId === card2.groupId;
-                
-                if (isMatch) {
+            state.g1_flippedCards.push(card);
+            
+            if (state.g1_flippedCards.length === 2) {
+                const [card1, card2] = state.g1_flippedCards;
+                if (card1.groupId === card2.groupId && card1.type !== card2.type) {
                     card1.matched = true;
                     card2.matched = true;
                     state.g1_matchCount++;
-                    state.g1_flipped = []; 
-                    renderGame1(); 
-                    
-                    if (state.g1_matchCount === NUM_GAME1_CARDS / 2) {
-                        MessageBox.show("太棒了！所有恐龍蛋都配對成功了！🎉", false);
-                        state.g1_currentQuestionItem.forEach(item => updatePools('game1', item, true));
-                        setTimeout(initGame1, 1500); 
+                    state.g1_flippedCards = [];
+                    renderGame1();
+                    if (state.g1_matchCount === state.g1_matchCards.length / 2) {
+                        setTimeout(() => MessageBox.show("太棒了！所有詞彙配對成功！🎉", false), 500);
+                        state.g1_gameStatus = 'won';
                     }
                 } else {
-                    state.g1_currentQuestionItem.forEach(item => updatePools('game1', item, false));
                     setTimeout(() => {
-                        const index1 = state.g1_cards.findIndex(c => c.id === card1.id);
-                        const index2 = state.g1_cards.findIndex(c => c.id === card2.id);
-                        if (index1 !== -1) state.g1_cards[index1].flipped = false;
-                        if (index2 !== -1) state.g1_cards[index2].flipped = false;
-                        state.g1_flipped = [];
-                        renderGame1(); 
-                    }, 1500); 
+                        state.g1_matchCards.forEach(c => {
+                            if (c.id === card1.id || c.id === card2.id) c.flipped = false;
+                        });
+                        state.g1_flippedCards = [];
+                        renderGame1();
+                    }, 1000);
                 }
             }
+            renderGame1();
         }
 
-        function renderGame1(wordError = false) {
-             const container = document.getElementById('game-content');
-            if (currentGame !== 'game1') return;
+        function renderGame1() {
+            const container = document.getElementById('game-content');
+            if (!container || currentGame !== 'game1') return; 
 
-            if (wordError) {
-                container.innerHTML = `<p class="text-red-500 text-center text-xl p-8">遊戲無法開始：詞彙不足！請前往單字後台 (遊戲 1) 新增至少 4 組配對。</p>`;
-                return;
-            }
-
-            const cardsHtml = state.g1_cards.map(card => {
-                const innerContent = card.type === 'emoji' 
-                    ? `<span class="emoji-content">${card.value}</span>`
-                    : `<span class="text-xl">${card.value.toLowerCase()}</span>`;
+            const cardsHtml = state.g1_matchCards.map(card => {
+                const isMatched = card.matched;
+                const isFlipped = card.flipped || isMatched;
 
                 return `
-                    <div class="h-28 w-28 md:h-32 md:w-32 mx-auto perspective-[1000px]" onclick="handleCardClickG1('${card.id}')">
-                        <div class="dino-card ${card.flipped || card.matched ? 'flipped' : ''} ${card.matched ? 'matched' : ''}" style="transition: transform 0.8s;">
-                            <!-- 背面 (未翻開) -->
-                            <div class="dino-card-inner dino-card-front text-4xl transform-gpu">
-                                🥚
+                    <div class="h-28 md:h-36 rounded-xl" onclick="handleCardClickG1('${card.id}')">
+                        <div class="g1-card-item ${isFlipped ? 'flipped' : ''} ${isMatched ? 'g1-card-matched' : ''}">
+                            <!-- 背面：恐龍蛋殼 -->
+                            <div class="g1-card-face g1-card-front text-6xl">
+                                🦖
                             </div>
-                            <!-- 正面 (內容) -->
-                            <div class="dino-card-inner dino-card-back text-gray-800 transform-gpu p-1">
-                                ${innerContent}
+                            <!-- 正面：內容 -->
+                            <div class="g1-card-face g1-card-back">
+                                <span class="text-3xl md:text-4xl">${card.type === 'EMOJI' ? card.value : formatDisplayWord(card.value)}</span>
+                                ${card.type === 'WORD' ? `<span class="text-sm text-gray-600 mt-1">(word)</span>` : ''}
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
-
+            
             container.innerHTML = `
-                <section class="w-full bg-accent-yellow p-4 rounded-xl shadow-inner border-b-8 border-yellow-600">
-                    <h2 class="text-xl md:text-3xl font-bold text-yellow-900 mb-4 text-center">🦖 恐龍蛋詞彙配對 (Dino Egg Match)</h2>
-                    <p class="text-center text-sm mb-4">目標: 點擊恐龍蛋，配對單字和 Emoji (共 ${NUM_GAME1_CARDS / 2} 組)。</p>
-                    <div id="dino-match-grid" class="grid grid-cols-4 gap-3 md:gap-4 max-w-lg mx-auto">
+                <section class="w-full bg-secondary-blue p-4 rounded-xl shadow-inner border-b-8 border-blue-600">
+                    <h2 class="text-xl md:text-3xl font-bold text-blue-800 mb-4 text-center">🦖 詞彙配對 (word/emoji match)</h2>
+                    <p class="text-center text-sm mb-4">目標: 配對單字和對應的 Emoji。已完成 ${state.g1_matchCount}/${state.g1_matchCards.length / 2} 組。</p>
+                    <div class="grid grid-cols-4 gap-3 md:gap-4 max-w-2xl mx-auto">
                         ${cardsHtml}
                     </div>
                     <div class="text-center mt-6">
-                        <button onclick="initGame1(true)" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg">
-                            重新開始/下一輪
+                        <button onclick="initGame1()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg">
+                            ${state.g1_gameStatus === 'won' ? '再玩一次' : '重新開始'}
                         </button>
                     </div>
                 </section>
             `;
         }
-        // --- Game 1 Logic End ---
+        // --- Game 1 End ---
 
+        // --- Game 2: 字母拼圖 (🤖) ---
+        function initGame2() {
+            const source = localData.g2_words;
+            if (source.length === 0) { MessageBox.show("請在後台新增字母拼圖單字！", true); return; }
 
-        // --- Game 2 (Robot Letter Puzzle) Logic ---
-        function initGame2(isInit = false) { newQuestionG2(isInit); }
+            const targetWord = shuffleArray(source)[0];
+            const letters = targetWord.split('');
 
-        function newQuestionG2(isInit = false) {
-            const sourceWords = getWordList('game2');
-            if (sourceWords.length === 0) { renderGame2(true); return; }
-            
-            const itemObj = drawNextItem('game2');
-            if (!itemObj) { initGame2(true); return; }
+            state.g2_currentWord = targetWord.toUpperCase();
+            state.g2_shuffledLetters = shuffleArray(letters.map(l => ({ id: crypto.randomUUID(), letter: l.toUpperCase() })));
+            state.g2_answerSlots = Array(letters.length).fill(null);
+            state.g2_gameStatus = 'playing';
 
-            const randomWord = itemObj.item.word;
-            state.g2_currentQuestionItem = itemObj.item; 
-            state.g2_currentWord = randomWord.toUpperCase(); 
-            
-            const targetLetters = state.g2_currentWord.split('');
-            state.g2_shuffledLetters = shuffleArray(targetLetters).map(l => ({ 
-                id: crypto.randomUUID(), 
-                value: l, 
-                used: false 
-            }));
-            
-            state.g2_targetLetters = targetLetters.map(l => ({ value: l, filled: null })); 
-            state.g2_userLetters = Array(targetLetters.length).fill(null); 
-            
             renderGame2();
         }
-        
-        function handleLetterClickG2(letterId) {
-            const letterObj = state.g2_shuffledLetters.find(l => l.id === letterId);
-            if (!letterObj || letterObj.used) return;
-            
-            const targetIndex = state.g2_userLetters.findIndex(l => l === null);
 
-            if (targetIndex !== -1) {
-                state.g2_userLetters[targetIndex] = letterObj.value;
-                letterObj.used = true;
-                
-                checkCompletionG2();
+        function handleLetterClickG2(id) {
+            if (state.g2_gameStatus !== 'playing') return;
+
+            const letterBlockIndex = state.g2_shuffledLetters.findIndex(l => l && l.id === id);
+            const letterBlock = state.g2_shuffledLetters[letterBlockIndex];
+            if (!letterBlock) return;
+
+            const targetSlotIndex = state.g2_answerSlots.findIndex(slot => slot === null);
+            if (targetSlotIndex !== -1) {
+                state.g2_answerSlots[targetSlotIndex] = letterBlock;
+                state.g2_shuffledLetters[letterBlockIndex] = null; 
+
                 renderGame2();
+                checkCompletionG2();
             }
         }
         
-        function handleTargetClickG2(targetIndex) {
-            const letterValue = state.g2_userLetters[targetIndex];
-            if (!letterValue) return;
+        function handleSlotClickG2(index) {
+            if (state.g2_gameStatus !== 'playing') return;
 
-            const usedLetterObj = state.g2_shuffledLetters.find(l => l.value === letterValue && l.used);
-            if (usedLetterObj) usedLetterObj.used = false;
+            const letterBlock = state.g2_answerSlots[index];
+            if (!letterBlock) return;
 
-            state.g2_userLetters[targetIndex] = null;
+            const sourceIndex = state.g2_shuffledLetters.findIndex(slot => slot === null);
+            if (sourceIndex !== -1) {
+                state.g2_shuffledLetters[sourceIndex] = letterBlock;
+            } else {
+                 state.g2_shuffledLetters.push(letterBlock);
+            }
+            
+            state.g2_answerSlots[index] = null; 
+
             renderGame2();
         }
 
         function checkCompletionG2() {
-            if (state.g2_userLetters.some(l => l === null)) return;
+            if (state.g2_answerSlots.some(slot => slot === null)) return;
+
+            const builtWord = state.g2_answerSlots.map(slot => slot.letter).join('');
             
-            const guessedWord = state.g2_userLetters.join('');
-            const isCorrect = guessedWord === state.g2_currentWord;
-            
-            if (isCorrect) {
-                MessageBox.show(`太棒了！拼字成功：${state.g2_currentWord}！🎉`, false);
-                updatePools('game2', state.g2_currentQuestionItem, true);
-                setTimeout(newQuestionG2, 1500);
+            if (builtWord === state.g2_currentWord) {
+                state.g2_gameStatus = 'won';
+                MessageBox.show(`拼字成功！單字是 ${formatDisplayWord(state.g2_currentWord)}！🎉`, false);
             } else {
-                MessageBox.show("拼字錯誤，再試試看！", true);
-                updatePools('game2', state.g2_currentQuestionItem, false);
+                const display = document.getElementById('g2-answer-display');
+                if (display) {
+                    display.classList.add('shake');
+                    setTimeout(() => display.classList.remove('shake'), 500);
+                }
+                MessageBox.show("拼字不正確，請再試試！", true);
             }
         }
 
-        function renderGame2(wordError = false) {
+
+        function renderGame2() {
             const container = document.getElementById('game-content');
-            if (currentGame !== 'game2') return;
+            if (!container || currentGame !== 'game2') return; 
 
-            if (wordError) {
-                container.innerHTML = `<p class="text-red-500 text-center text-xl p-8">遊戲無法開始：單字庫不足！請前往單字後台 (遊戲 2) 新增。</p>`;
-                return;
-            }
-
-            const targetHtml = state.g2_targetLetters.map((target, index) => {
-                const letter = state.g2_userLetters[index];
-                const isCorrect = letter === target.value;
-                const displayClass = letter ? (isCorrect ? 'bg-green-300' : 'bg-red-300') : 'bg-white';
-                
-                return `
-                    <div class="flex flex-col items-center">
-                        <div class="robot-target w-12 h-12 md:w-16 md:h-16 ${letter ? 'filled' : ''} ${displayClass} text-2xl font-bold" onclick="handleTargetClickG2(${index})">
-                            ${letter ? letter.toLowerCase() : '?'}
-                        </div>
-                        <p class="text-xs mt-1 text-gray-500">${index + 1}</p>
-                    </div>
-                `;
+            const answerSlotsHtml = state.g2_answerSlots.map((slot, index) => {
+                const letter = slot ? slot.letter : '';
+                return `<div class="g2-slot cursor-pointer" onclick="handleSlotClickG2(${index})">${letter}</div>`;
             }).join('');
 
-            const shuffledHtml = state.g2_shuffledLetters.map(letter => {
-                const buttonClass = letter.used ? 'opacity-30 cursor-not-allowed' : 'hover:bg-yellow-400';
-                return `
-                    <button class="robot-part text-2xl md:text-3xl ${buttonClass}" 
-                            onclick="handleLetterClickG2('${letter.id}')"
-                            ${letter.used ? 'disabled' : ''}>
-                        ${letter.value.toLowerCase()}
-                    </button>
-                `;
-            }).join('');
+            const letterBlocksHtml = state.g2_shuffledLetters.filter(l => l !== null).map(l => `
+                <button onclick="handleLetterClickG2('${l.id}')" 
+                        class="g2-letter-block bg-accent-yellow hover:bg-yellow-400 text-gray-800 font-bold text-xl py-3 px-4 rounded-xl shadow-cute">
+                    ${l.letter}
+                </button>
+            `).join('');
 
             container.innerHTML = `
-                <section class="w-full bg-secondary-blue p-4 rounded-xl shadow-inner border-b-8 border-blue-600">
-                    <h2 class="text-xl md:text-3xl font-bold text-blue-800 mb-2 text-center">🤖 機器人字母拼圖 (Robot Letter Puzzle)</h2>
-                    <p class="text-center text-sm mb-4">目標: 點擊下方的字母，依序填入正確位置，拼出單字。</p>
+                <section class="w-full bg-gray-700 p-4 rounded-xl shadow-inner border-b-8 border-gray-900">
+                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🤖 字母拼圖 (spelling robot)</h2>
+                    <p class="text-center text-sm text-gray-300 mb-4">目標: 點擊下方的字母，按正確順序拼出你聽到的單字！</p>
                 </section>
                 
-                <div class="flex flex-col items-center p-6 bg-keyboard-bg rounded-xl shadow-md">
-                    <p class="text-3xl md:text-5xl mb-4 font-extrabold text-blue-800">
-                        目標單字長度: ${state.g2_currentWord.length}
-                    </p>
-                    
-                    <button onclick="callTTS(state.g2_currentWord)" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mb-6">
-                        🔊 點擊聆聽單字
+                <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
+                    <button onclick="callTTS(state.g2_currentWord)" class="text-white bg-blue-500 hover:bg-blue-600 py-3 px-6 rounded-full shadow-cute mb-6 flex items-center">
+                        <span class="text-3xl mr-2">🔊</span> 點我聽單字
                     </button>
-
-                    <!-- 拼字目標區 -->
-                    <div class="flex space-x-2 md:space-x-3 mb-8">
-                        ${targetHtml}
+                    
+                    <div id="g2-answer-display" class="flex space-x-2 mb-8 p-4 bg-gray-100 rounded-lg shadow-inner">
+                        ${answerSlotsHtml}
                     </div>
 
-                    <!-- 機器人部件 (字母塊) -->
-                    <div class="flex flex-wrap justify-center gap-2 md:gap-3 p-4 bg-white rounded-lg shadow-inner border-4 border-gray-300">
-                        ${shuffledHtml}
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">字母庫 (點擊填入)</h3>
+                    <div class="flex flex-wrap justify-center gap-2 p-3 bg-keyboard-bg rounded-xl w-full">
+                        ${letterBlocksHtml}
                     </div>
                     
                     <div class="text-center mt-6">
-                        <button onclick="newQuestionG2(false)" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg">
-                            下一個單字
+                        <button onclick="initGame2()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg">
+                            ${state.g2_gameStatus === 'won' ? '再玩一次' : '換個單字'}
                         </button>
                     </div>
                 </div>
             `;
         }
-        // --- Game 2 Logic End ---
-
-
-        // --- Game 3 (Superhero Action) Logic ---
-        function initGame3(isInit = false) {
-            if(isInit) state.g3_score = 0;
-            newActionG3();
-        }
-
-        function newActionG3() {
-            const sourceActions = getWordList('game3');
-            if (sourceActions.length < 3) { renderGame3(true); return; }
+        // --- Game 2 End ---
+        
+        // --- G3, G6, G7 輔助函數：收集所有選項 ---
+        function getAllDecoyOptions(dataKey, currentCorrectAnswer) {
+            let allOptions = new Set();
             
-            const itemObj = drawNextItem('game3');
-            if (!itemObj) { initGame3(true); return; }
-            
-            const correctAnswer = itemObj.item;
-            state.g3_currentQuestionItem = correctAnswer; 
-
-            const otherActions = sourceActions.filter(a => getItemKey(a, 'game3') !== getItemKey(correctAnswer, 'game3'));
-            const wrongAnswers = shuffleArray(otherActions).slice(0, 2);
-            
-            const allOptions = shuffleArray([correctAnswer, ...wrongAnswers]);
-
-            state.g3_currentAction = {
-                command: `${correctAnswer.verb.toUpperCase()}!`,
-                correctVerb: correctAnswer.verb,
-                options: allOptions,
-                isGuessed: false
-            };
-            
-            renderGame3();
-            setTimeout(() => callTTS(state.g3_currentAction.command), 500);
-        }
-
-        function handleGuessG3(guessedVerb) {
-            if (state.g3_currentAction.isGuessed) return;
-            
-            state.g3_currentAction.isGuessed = true;
-            const isCorrect = guessedVerb === state.g3_currentAction.correctVerb;
-            
-            if (isCorrect) {
-                state.g3_score++;
-                MessageBox.show("BINGO! 太棒了！💪", false);
-                updatePools('game3', state.g3_currentQuestionItem, true);
-            } else {
-                state.g3_score = Math.max(0, state.g3_score - 1);
-                MessageBox.show(`答錯了，指令是 ${state.g3_currentAction.command.toLowerCase()}。`, true);
-                updatePools('game3', state.g3_currentQuestionItem, false);
+            if (dataKey === 'g3_actions') {
+                localData.g3_actions.forEach(q => allOptions.add(q.verb.toUpperCase()));
+                ALL_VERBS.forEach(v => allOptions.add(v.toUpperCase()));
+            } else if (dataKey === 'g6_qa_match') {
+                localData.g6_qa_match.forEach(q => allOptions.add(q.answer));
+            } else if (dataKey === 'g7_comparatives') {
+                localData.g7_comparatives.forEach(q => {
+                    const adj = q.adj.toUpperCase();
+                    // 確保比較級形式也被納入干擾項庫
+                    allOptions.add(_getComparativeForm(adj));
+                });
+                ALL_ADJECTIVES.forEach(adj => allOptions.add(_getComparativeForm(adj)));
+            } else if (dataKey === 'g4_grammar') {
+                // G4 特殊處理：收集所有答案作為選項庫，並加入通用文法詞彙
+                localData.g4_grammar.forEach(q => allOptions.add(q.answer.toUpperCase()));
+                GENERAL_GRAMMAR.forEach(g => allOptions.add(g.toUpperCase()));
             }
-            
-            renderGame3();
-            setTimeout(newActionG3, 2000);
+
+            // 移除正確答案
+            allOptions.delete(currentCorrectAnswer.toUpperCase ? currentCorrectAnswer.toUpperCase() : currentCorrectAnswer);
+            return shuffleArray(Array.from(allOptions));
         }
 
-        function renderGame3(wordError = false) {
-            const container = document.getElementById('game-content');
-            if (currentGame !== 'game3') return;
+        // --- Game 3: 動作指令 (🦸) ---
+        function initGame3() {
+            if (!setupQuiz('g3_actions', 'g3')) return;
+            renderGame3();
+        }
 
-            if (wordError) {
-                container.innerHTML = `<p class="text-red-500 text-center text-xl p-8">遊戲無法開始：動作指令不足！請前往單字後台 (遊戲 3) 新增至少 3 個動作。</p>`;
+        async function handleAnswerG3(selectedVerb) {
+            if (state.gameStatus !== 'playing') return;
+
+            const currentQ = state.currentQuizSet[state.currentQIndex];
+            
+            if (selectedVerb === currentQ.verb) {
+                state.score++;
+                MessageBox.show("答對了！超級英雄動作正確！🦸", false);
+            } else {
+                MessageBox.show(`答錯了，正確答案是 ${formatDisplayWord(currentQ.verb)}。`, true);
+            }
+
+            setTimeout(() => goToNextQuestion(renderGame3), 1000);
+        }
+
+        function renderGame3() {
+            const container = document.getElementById('game-content');
+            if (!container || currentGame !== 'game3') return; 
+
+            if (state.gameStatus === 'finished') {
+                container.innerHTML = getFinishedScreen('🦸 動作指令', state.score, state.currentQuizSet.length, initGame3);
                 return;
             }
-
-            const optionsHtml = state.g3_currentAction?.options.map(option => {
-                const isCorrect = option.verb === state.g3_currentAction.correctVerb;
-                const isGuessed = state.g3_currentAction.isGuessed;
-                
-                let buttonClass = '';
-                if (isGuessed) {
-                    buttonClass = isCorrect ? 'bg-green-400 shadow-green-600' : 'bg-red-400 opacity-70 cursor-not-allowed';
-                } else {
-                    buttonClass = 'hover:bg-blue-300';
-                }
-
-                // FIX: 移除圖片/Emoji，只顯示動詞文字
-                const verbDisplay = `<span class="verb-display text-gray-800">${option.verb}</span>`;
-
-                return `
-                    <button onclick="handleGuessG3('${option.verb}')" 
-                            class="superhero-option flex flex-col items-center justify-center p-4 rounded-xl shadow-cute transition duration-200 ${buttonClass}"
-                            ${isGuessed ? 'disabled' : ''}>
-                        <span class="text-4xl md:text-5xl mb-2">💥</span> <!-- 使用通用的閃爍 Emoji 作為視覺提示 -->
-                        <span class="text-xl md:text-2xl font-bold">${option.verb.toLowerCase()}</span>
-                    </button>
-                `;
-            }).join('');
+            
+            const currentQ = state.currentQuizSet[state.currentQIndex];
+            const questionNumber = state.currentQIndex + 1;
+            
+            // --- G3 簡化邏輯：動態生成干擾選項 ---
+            const correctAnswer = currentQ.verb;
+            let decoys = getAllDecoyOptions('g3_actions', correctAnswer);
+            
+            // 隨機選取 2 個作為干擾選項
+            decoys = decoys.slice(0, 2); 
+            
+            const options = shuffleArray([correctAnswer, ...decoys]);
+            // --- 簡化邏輯結束 ---
+            
+            const optionsHtml = options.map(verb => `
+                <button onclick="handleAnswerG3('${verb}')"
+                        class="key-btn bg-accent-yellow hover:bg-yellow-400 text-gray-800 font-bold py-4 rounded-xl text-2xl shadow-cute">
+                    ${formatDisplayWord(verb)}
+                </button>
+            `).join('');
 
             container.innerHTML = `
-                <section class="w-full bg-secondary-blue p-4 rounded-xl shadow-inner border-b-8 border-blue-600">
-                    <h2 class="text-xl md:text-3xl font-bold text-blue-800 mb-2 text-center">🦸 超級英雄動作指令 (Superhero Action)</h2>
-                    <p class="text-center text-sm mb-2">目標: 點擊喇叭聆聽指令，然後點擊正確的動作按鈕。</p>
+                <section class="w-full bg-red-600 p-4 rounded-xl shadow-inner border-b-8 border-red-900">
+                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🦸 動作指令 (action command)</h2>
+                    <p class="text-center text-sm text-red-100">目標: 聽取指令，並選擇正確的動詞卡片。分數: ${state.score}/${questionNumber}</p>
                 </section>
                 
-                <div class="flex flex-col items-center p-6 bg-keyboard-bg rounded-xl shadow-md">
-                    <div class="mb-4 flex justify-between w-full max-w-sm">
-                        <p class="text-lg font-bold text-gray-700">得分: ${state.g3_score}</p>
-                        <button onclick="newActionG3()" class="text-sm bg-accent-yellow px-3 py-1 rounded-full shadow-md hover:bg-yellow-400">
-                            下一題
-                        </button>
-                    </div>
+                <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">第 ${questionNumber} 題 / 共 ${state.currentQuizSet.length} 題</h3>
 
-                    <!-- 英雄區 (純裝飾) -->
-                    <div id="superhero-hero" class="text-9xl mb-8 transition-transform duration-500 transform-gpu">
-                        💥
-                    </div>
-
-                    <!-- 喇叭和指令 -->
-                    <button onclick="callTTS(state.g3_currentAction.command)" 
-                            class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-cute text-xl flex items-center mx-auto mb-6">
-                        🔊 聆聽指令
+                    <button onclick="callTTS('${currentQ.verb}')" class="text-white bg-blue-500 hover:bg-blue-600 py-4 px-8 rounded-full shadow-cute mb-8 flex items-center">
+                        <span class="text-4xl mr-3">🔊</span> 點我聽動作指令
                     </button>
-
-                    <!-- 選項按鈕 -->
-                    <div class="grid grid-cols-3 gap-4 max-w-lg w-full">
+                    
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6">請選擇正確的動作：</h3>
+                    
+                    <div class="grid grid-cols-3 gap-4 w-full max-w-lg">
                         ${optionsHtml}
                     </div>
                 </div>
             `;
         }
-        // --- Game 3 Logic End ---
+        // --- Game 3 End ---
 
-
-        // --- Game 4 (Grammar Parking Lot) Logic ---
-        function initGame4(isInit = false) {
-            state.g4_isLocked = false;
-            newSentenceG4();
-        }
-
-        function newSentenceG4() {
-            const sourceSentences = getWordList('game4');
-            if (sourceSentences.length === 0) { renderGame4(true); return; }
-            
-            const itemObj = drawNextItem('game4');
-            if (!itemObj) { initGame4(true); return; }
-            
-            const newSentence = itemObj.item; 
-            state.g4_currentQuestionItem = newSentence; 
-
-            state.g4_currentSentence = {
-                ...newSentence,
-                shuffledOptions: shuffleArray(newSentence.options),
-                userAnswer: null
-            };
-            state.g4_isLocked = false;
-            
+        // --- Game 4: 文法停車場 (🚗) ---
+        function initGame4() {
+            if (!setupQuiz('g4_grammar', 'g4')) return;
+            state.g4_displaySentence = ''; // Reset display sentence
             renderGame4();
         }
-        
-        function handleParkingG4(guessedOption) {
-            if (state.g4_isLocked) return;
 
-            state.g4_isLocked = true;
-            state.g4_currentSentence.userAnswer = guessedOption;
+        function handleAnswerG4(selectedOption) {
+            if (state.gameStatus !== 'playing') return;
 
-            const isCorrect = guessedOption === state.g4_currentSentence.answer;
+            const currentQ = state.currentQuizSet[state.currentQIndex];
             
-            renderGame4();
-            
-            updatePools('game4', state.g4_currentQuestionItem, isCorrect);
+            if (selectedOption === currentQ.answer) {
+                state.score++;
+                MessageBox.show("答對了！汽車已停入正確車位！🚗", false);
+                
+                // 1. 填入答案並更新狀態
+                const filledSentence = currentQ.sentence.replace('__', formatDisplayWord(selectedOption));
+                state.g4_displaySentence = filledSentence;
+                
+                // 2. 重新渲染 (帶有填入的答案)
+                renderGame4(true); 
 
-            const carElement = document.getElementById('parking-car');
+                // 3. 延遲後進入下一題
+                setTimeout(() => {
+                    state.g4_displaySentence = ''; // 清空，準備下一題
+                    goToNextQuestion(renderGame4);
+                }, 1500);
 
-            if (isCorrect) {
-                MessageBox.show("停車成功！✅", false);
             } else {
-                if (carElement) {
-                    carElement.classList.add('animate-pulse');
-                    setTimeout(() => carElement.classList.remove('animate-pulse'), 500);
-                }
-                MessageBox.show(`答錯了，正確答案是 ${state.g4_currentSentence.answer.toLowerCase()}。`, true);
+                MessageBox.show(`答錯了，請再試試！`, true);
             }
-            
-            setTimeout(newSentenceG4, 2500);
         }
 
-        function renderGame4(wordError = false) {
+        function renderGame4(isAnswerFilled = false) {
             const container = document.getElementById('game-content');
-            if (currentGame !== 'game4') return;
+            if (!container || currentGame !== 'game4') return; 
 
-            if (wordError) {
-                container.innerHTML = `<p class="text-red-500 text-center text-xl p-8">遊戲無法開始：句型單字庫不足！請前往單字後台 (遊戲 4) 新增。</p>`;
+            if (state.gameStatus === 'finished') {
+                container.innerHTML = getFinishedScreen('🚗 文法停車場', state.score, state.currentQuizSet.length, initGame4);
                 return;
             }
+            
+            const currentQ = state.currentQuizSet[state.currentQIndex];
+            const questionNumber = state.currentQIndex + 1;
+            
+            // --- G4 智能干擾項生成 ---
+            // 由於後台已簡化，options 字段不再可靠，我們重新生成選項
+            const correctAnswer = currentQ.answer.toUpperCase();
+            let decoys = getAllDecoyOptions('g4_grammar', correctAnswer);
+            
+            // 選取 3 個干擾項
+            decoys = decoys.slice(0, 3);
+            const options = shuffleArray([currentQ.answer, ...decoys]);
+            // --- 智能干擾項生成結束 ---
 
-            const sentenceWithBlank = state.g4_currentSentence.pattern.replace('____', 
-                `<span class="text-red-600 font-extrabold p-1 bg-yellow-200 rounded">${state.g4_isLocked ? state.g4_currentSentence.userAnswer : '____'}</span>`
-            );
+            // 根據是否已填入答案來決定顯示的內容
+            const sentenceToDisplay = isAnswerFilled 
+                ? state.g4_displaySentence 
+                : currentQ.sentence.replace('__', '____'); 
 
-            const optionsHtml = state.g4_currentSentence.shuffledOptions.map((option) => {
-                const isCorrect = option === state.g4_currentSentence.answer;
-                const isGuessed = state.g4_isLocked && option === state.g4_currentSentence.userAnswer;
+            const parts = sentenceToDisplay.split('____');
+            const blankContent = isAnswerFilled 
+                ? formatDisplayWord(currentQ.answer) 
+                : '...';
+
+            const questionTextHtml = `${formatDisplayWord(parts[0], true)} 
+                <span class="g4-blank ${isAnswerFilled ? 'g4-blank-filled' : ''}">
+                    ${blankContent}
+                </span> 
+                ${formatDisplayWord(parts[1])}`;
+
+
+            const optionsHtml = isAnswerFilled ? '' : options.map(option => `
+                <button onclick="handleAnswerG4('${option}')"
+                        class="g4-option-btn key-btn font-bold py-3 rounded-xl shadow-lg">
+                    ${formatDisplayWord(option)}
+                </button>
+            `).join('');
+
+
+            container.innerHTML = `
+                <section class="w-full bg-gray-400 p-4 rounded-xl shadow-inner border-b-8 border-gray-600">
+                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🚗 文法停車場 (grammar lot)</h2>
+                    <p class="text-center text-sm text-gray-800">目標: 選擇正確的動詞/介詞，將句子填完整。分數: ${state.score}/${questionNumber}</p>
+                </section>
                 
-                let spotClass = 'parking-spot hover:shadow-lg hover:scale-[1.02]';
-                if (state.g4_isLocked) {
-                    spotClass = isGuessed 
-                        ? (isCorrect ? 'bg-green-300 border-green-600' : 'bg-red-300 border-red-600')
-                        : (isCorrect ? 'bg-yellow-300 border-yellow-600' : 'bg-gray-200 border-gray-400');
-                } else {
-                     spotClass += ' bg-white';
-                }
+                <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">第 ${questionNumber} 題 / 共 ${state.currentQuizSet.length} 題</h3>
 
-                return `
-                    <div onclick="handleParkingG4('${option}')" 
-                         class="text-xl font-bold text-gray-800 text-center ${spotClass} transition duration-300">
-                        ${option}
+                    <div class="g4-sentence-box w-full max-w-2xl text-center mb-6">
+                        <div class="text-sm font-bold text-gray-700 mb-2">請完成句子 (車身):</div>
+                        <div class="g4-sentence-part" id="g4-sentence-display">${questionTextHtml}</div>
                     </div>
-                `;
-            }).join('');
+
+                    <h3 class="text-xl font-bold text-gray-800 mt-6 mb-4">選擇停車位 (Choose the spot):</h3>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-3xl">
+                        ${optionsHtml}
+                    </div>
+                    
+                    ${isAnswerFilled ? `<button onclick="goToNextQuestion(renderGame4)" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mt-8">下一題</button>` : ''}
+                    <button onclick="initGame4()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mt-8 ${isAnswerFilled ? 'hidden' : ''}">重新開始</button>
+                </div>
+            `;
+        }
+        // --- Game 4 End ---
+        
+        // --- Game 5: 誰說謊了? (🤥) ---
+        function initGame5() {
+            if (!setupQuiz('g5_true_false', 'g5')) return;
+            renderGame5();
+        }
+
+        function handleAnswerG5(isTrue) {
+            if (state.gameStatus !== 'playing') return;
+
+            const currentQ = state.currentQuizSet[state.currentQIndex];
+            const isCorrect = (currentQ.answer === isTrue);
+            
+            if (isCorrect) {
+                state.score++;
+                MessageBox.show("判斷正確！你是個誠實的孩子！✅", false);
+            } else {
+                MessageBox.show(`答錯了，正確答案是 ${currentQ.answer ? 'True' : 'False'}。`, true);
+            }
+
+            setTimeout(() => goToNextQuestion(renderGame5), 1000);
+        }
+
+        function renderGame5() {
+            const container = document.getElementById('game-content');
+            if (!container || currentGame !== 'game5') return; 
+
+            if (state.gameStatus === 'finished') {
+                container.innerHTML = getFinishedScreen('🤥 誰說謊了?', state.score, state.currentQuizSet.length, initGame5);
+                return;
+            }
+            
+            const currentQ = state.currentQuizSet[state.currentQIndex];
+            const questionNumber = state.currentQIndex + 1;
 
             container.innerHTML = `
                 <section class="w-full bg-accent-yellow p-4 rounded-xl shadow-inner border-b-8 border-yellow-600">
-                    <h2 class="text-xl md:text-3xl font-bold text-yellow-900 mb-2 text-center">🚗 交通工具文法停車場 (Grammar Parking Lot)</h2>
-                    <p class="text-center text-sm mb-4">目標: 選擇正確的單字/詞組，讓汽車停入正確的停車位。</p>
+                    <h2 class="text-xl md:text-3xl font-bold text-yellow-900 mb-2 text-center">🤥 誰說謊了? (true/false quiz)</h2>
+                    <p class="text-center text-sm text-yellow-800">目標: 根據圖片判斷描述是否正確。分數: ${state.score}/${questionNumber}</p>
                 </section>
                 
-                <div class="flex flex-col items-center p-6 bg-keyboard-bg rounded-xl shadow-md">
-                    
-                    <!-- 汽車圖示 -->
-                    <div id="parking-car" class="text-6xl mb-4 transition-transform duration-500 car-anim">
-                        🚗
+                <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">第 ${questionNumber} 題 / 共 ${state.currentQuizSet.length} 題</h3>
+
+                    <div class="mb-6 p-4 border-4 border-primary-pink rounded-xl shadow-lg flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 w-full max-w-3xl">
+                        <div class="flex-shrink-0">
+                            <img src="${currentQ.imageUrl}" alt="Question Image" onerror="this.onerror=null; this.src='https://placehold.co/150x120/CCCCCC/000000?text=No+Image'" class="rounded-lg shadow-md w-32 h-32 md:w-40 md:h-40 object-cover">
+                        </div>
+                        <div class="flex-grow text-center md:text-left">
+                            <h4 class="text-2xl md:text-3xl font-extrabold text-pink-600">${formatDisplayWord(currentQ.statement, true)}</h4>
+                            <p class="text-sm text-gray-500 mt-1">（請判斷這句話是否正確？）</p>
+                        </div>
                     </div>
 
-                    <!-- 句子顯示區 -->
-                    <div class="text-3xl md:text-4xl font-semibold mb-8 p-4 bg-white rounded-lg border-4 border-gray-300">
-                        ${sentenceWithBlank.toLowerCase()}
-                    </div>
-
-                    <!-- 停車位選項 -->
-                    <div class="grid grid-cols-3 gap-4 max-w-lg w-full">
-                        ${optionsHtml}
-                    </div>
-
-                    <div class="text-center mt-6">
-                        <button onclick="newSentenceG4()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg" ${state.g4_isLocked ? 'disabled' : ''}>
-                            跳過 / 下一題
+                    <div class="flex space-x-6 mt-6">
+                        <button onclick="handleAnswerG5(true)" class="key-btn bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-10 rounded-full shadow-cute text-2xl">
+                            ✅ True
+                        </button>
+                        <button onclick="handleAnswerG5(false)" class="key-btn bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-10 rounded-full shadow-cute text-2xl">
+                            ❌ False
                         </button>
                     </div>
+
+                    <button onclick="initGame5()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mt-8">重新開始</button>
                 </div>
             `;
         }
-        // --- Game 4 Logic End ---
+        // --- Game 5 End ---
 
-
-        // --- Game 5 (Who's Lying?) Logic ---
-        function initGame5(isInit = false) {
-            state.g5_gameStatus = 'ready';
-            newQuestionG5();
+        // --- Game 6: 問答選擇題尋寶 (🗺️) ---
+        function initGame6() {
+            if (!setupQuiz('g6_qa_match', 'g6')) return;
+            state.g6_treasures = 0;
+            renderGame6();
         }
 
-        function newQuestionG5() {
-            const sourceQuestions = getWordList('game5');
-            if (sourceQuestions.length === 0) { renderGame5(true); return; }
-            
-            const itemObj = drawNextItem('game5');
-            if (!itemObj) { initGame5(true); return; }
+        function handleAnswerG6(selectedAnswer) {
+            if (state.gameStatus !== 'playing') return;
 
-            const randomQuestion = itemObj.item;
-            state.g5_currentQuestionItem = randomQuestion; 
+            const currentQ = state.currentQuizSet[state.currentQIndex];
             
-            state.g5_currentStatement = {
-                ...randomQuestion,
-                isGuessed: false
-            };
-            state.g5_shaker = { true: false, false: false };
-            state.g5_gameStatus = 'playing';
-            renderGame5();
-            
-            setTimeout(() => callTTS(randomQuestion.statement), 500);
-        }
-
-        function handleGuessG5(guess) {
-            if (state.g5_currentStatement.isGuessed) return;
-            
-            state.g5_currentStatement.isGuessed = true;
-            const correctAnswer = state.g5_currentStatement.answer;
-            const isCorrect = guess === correctAnswer;
-            
-            updatePools('game5', state.g5_currentQuestionItem, isCorrect);
-            
-            if (isCorrect) {
-                MessageBox.show("答對了！這位人物說的是實話！🎉", false);
+            if (selectedAnswer === currentQ.answer) {
+                state.score++;
+                state.g6_treasures++;
+                MessageBox.show("答對了！找到了一個寶藏！💎", false);
             } else {
-                const lyingPerson = guess.toLowerCase(); 
-                state.g5_shaker[lyingPerson] = true;
-                
-                MessageBox.show("答錯了！這個人物在說謊！🤥", true);
+                MessageBox.show(`答錯了，正確答案是 "${formatDisplayWord(currentQ.answer, true)}"！`, true);
             }
-            
-            renderGame5();
-            setTimeout(newQuestionG5, 2500);
+
+            setTimeout(() => goToNextQuestion(renderGame6), 1000);
         }
 
-        function renderGame5(wordError = false) {
+        function renderGame6() {
             const container = document.getElementById('game-content');
-            if (currentGame !== 'game5') return;
+            if (!container || currentGame !== 'game6') return; 
 
-            if (wordError) {
-                container.innerHTML = `<p class="text-red-500 text-center text-xl p-8">遊戲無法開始：問題單字庫不足！請前往單字後台 (遊戲 5) 新增。</p>`;
+            if (state.gameStatus === 'finished') {
+                container.innerHTML = getFinishedScreen('🗺️ 問答選擇題尋寶', state.score, state.currentQuizSet.length, initGame6);
                 return;
             }
             
-            const statement = state.g5_currentStatement.statement.toLowerCase();
-            const isGuessed = state.g5_currentStatement.isGuessed;
+            const currentQ = state.currentQuizSet[state.currentQIndex];
+            const questionNumber = state.currentQIndex + 1;
+            
+            // --- G6 簡化邏輯：動態生成干擾選項 ---
+            const correctAnswer = currentQ.answer;
+            let decoys = getAllDecoyOptions('g6_qa_match', correctAnswer);
+            
+            // 隨機選取 3 個作為干擾選項
+            decoys = decoys.slice(0, 3); 
+            
+            const options = shuffleArray([correctAnswer, ...decoys]); 
+            // --- 簡化邏輯結束 ---
 
-            const trueIsLying = isGuessed && state.g5_currentStatement.answer === 'FALSE';
-            const falseIsLying = isGuessed && state.g5_currentStatement.answer === 'TRUE';
-            
-            const trueShaker = state.g5_shaker.true ? 'shaking' : '';
-            const falseShaker = state.g5_shaker.false ? 'shaking' : '';
-            
-            const showTrueTongue = state.g5_shaker.true;
-            const showFalseTongue = state.g5_shaker.false;
+            const optionsHtml = options.map(option => `
+                <button onclick="handleAnswerG6('${option}')"
+                        class="key-btn bg-secondary-blue hover:bg-blue-400 text-blue-900 font-bold py-3 rounded-xl text-lg shadow-cute text-left px-4">
+                    ${formatDisplayWord(option, true)}
+                </button>
+            `).join('');
 
             container.innerHTML = `
-                <section class="w-full bg-secondary-blue p-4 rounded-xl shadow-inner border-b-8 border-blue-600">
-                    <h2 class="text-xl md:text-3xl font-bold text-blue-800 mb-2 text-center">🤥 誰說謊了? (True/False Reading)</h2>
-                    <p class="text-center text-sm mb-4">目標: 閱讀短句並判斷真假 (True/False)。</p>
+                <section class="w-full bg-yellow-600 p-4 rounded-xl shadow-inner border-b-8 border-yellow-900">
+                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🗺️ 問答選擇題尋寶 (q&a treasure hunt)</h2>
+                    <p class="text-center text-sm text-yellow-200">目標: 選擇正確的答句。尋獲寶藏: ${state.g6_treasures} / 分數: ${state.score}/${questionNumber}</p>
                 </section>
-
-                <div class="flex flex-col items-center p-6 bg-keyboard-bg rounded-xl shadow-md w-full">
+                
+                <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">第 ${questionNumber} 題 / 共 ${state.currentQuizSet.length} 題</h3>
                     
-                    <div class="mb-6 p-4 md:p-6 bg-white rounded-xl shadow-lg border-4 border-accent-yellow w-full max-w-xl text-center">
-                        <h3 class="text-2xl md:text-4xl font-extrabold text-gray-800">
-                            "${statement}"
-                        </h3>
+                    <div class="g6-question-box w-full max-w-3xl text-center mb-6">
+                        <h4 class="text-3xl md:text-4xl font-extrabold text-yellow-900">Q: ${formatDisplayWord(currentQ.question, true)}</h4>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-gray-800 mt-4 mb-4">請選擇正確的答覆:</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
+                        ${optionsHtml}
                     </div>
                     
-                    <button onclick="callTTS(state.g5_currentStatement.statement)" 
-                            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mb-8">
-                        🔊 聆聽短句
-                    </button>
-
-                    <!-- 角色選項區 (True vs False) -->
-                    <div class="flex justify-around items-end w-full max-w-3xl">
-                        
-                        <!-- TRUE -->
-                        <div class="flex flex-col items-center relative p-2">
-                            <div id="true-character" class="text-6xl md:text-8xl p-3 mb-2 transition-transform duration-300 relative ${trueShaker}">
-                                ${trueIsLying ? '🤡' : '👑'}
-                                ${showTrueTongue ? `<span class="tongue-container"><span class="tongue-out">👅</span></span>` : ''}
-                            </div>
-                            <button onclick="handleGuessG5('TRUE')" 
-                                    class="text-2xl md:text-3xl font-extrabold py-3 px-8 rounded-2xl shadow-cute transition duration-150 
-                                        ${trueIsLying ? 'bg-red-400 opacity-70 cursor-not-allowed' : 'bg-green-400 hover:bg-green-500'}"
-                                    ${isGuessed ? 'disabled' : ''}>
-                                TRUE
-                            </button>
-                            ${isGuessed ? `<p class="text-lg font-bold mt-2 ${trueIsLying ? 'text-red-600' : 'text-green-600'}">${trueIsLying ? '說謊者' : '誠實者'}</p>` : ''}
-                        </div>
-
-                        <!-- FALSE -->
-                        <div class="flex flex-col items-center relative p-2">
-                            <div id="false-character" class="text-6xl md:text-8xl p-3 mb-2 transition-transform duration-300 relative ${falseShaker}">
-                                ${falseIsLying ? '🤡' : '👑'}
-                                ${showFalseTongue ? `<span class="tongue-container"><span class="tongue-out">👅</span></span>` : ''}
-                            </div>
-                            <button onclick="handleGuessG5('FALSE')" 
-                                    class="text-2xl md:text-3xl font-extrabold py-3 px-8 rounded-2xl shadow-cute transition duration-150 
-                                        ${falseIsLying ? 'bg-red-400 opacity-70 cursor-not-allowed' : 'bg-green-400 hover:bg-green-500'}"
-                                    ${isGuessed ? 'disabled' : ''}>
-                                FALSE
-                            </button>
-                            ${isGuessed ? `<p class="text-lg font-bold mt-2 ${falseIsLying ? 'text-red-600' : 'text-green-600'}">${falseIsLying ? '說謊者' : '誠實者'}</p>` : ''}
-                        </div>
-                    </div>
-
-                    <div class="text-center mt-8">
-                        <button onclick="newQuestionG5()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg">
-                            下一個問題
-                        </button>
-                    </div>
+                    <button onclick="initGame6()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mt-8">重新開始</button>
                 </div>
             `;
         }
-        // --- Game 5 Logic End ---
+        // --- Game 6 End ---
 
-
-        // --- Game 6 (Preposition Hunt) Logic ---
-        function initGame6(isInit = false) {
-            if (isInit) state.g6_score = 0;
-            newQuestionG6();
+        // --- Game 7: 比較級傳送門 (⚖️) ---
+        
+        // 輔助函數：獲取比較級形式
+        function _getComparativeForm(baseAdj) {
+            const adj = baseAdj.toUpperCase();
+            const commonComparatives = {
+                'BIG': 'BIGGER', 'SMALL': 'SMALLER', 'FAST': 'FASTER', 'SLOW': 'SLOWER',
+                'HAPPY': 'HAPPIER', 'TALL': 'TALLER', 'SHORT': 'SHORTER', 'LONG': 'LONGER',
+                'GOOD': 'BETTER', 'BAD': 'WORSE', 'NEW': 'NEWER', 'OLD': 'OLDER'
+            };
+            return commonComparatives[adj] || `MORE ${adj}`;
         }
 
-        function newQuestionG6() {
-            const sourceQuestions = getWordList('game6');
-            if (sourceQuestions.length === 0) { renderGame6(true); return; }
+        // 輔助函數：生成比較級選項和正確答案 (包含反義詞邏輯)
+        function generateComparativeOptionsAndAnswer(currentQ, isAisB) {
+            const baseAdj = currentQ.adj.toUpperCase();
+            let effectiveAdj = baseAdj;
 
-            const itemObj = drawNextItem('game6');
-            if (!itemObj) { initGame6(true); return; }
+            // 1. 判斷有效形容詞：如果問 B vs A (isAisB=false)，則使用反義詞
+            if (!isAisB) {
+                effectiveAdj = ANTONYM_MAP[baseAdj] || baseAdj; // 如果沒有反義詞，則沿用原形容詞
+            }
 
-            const question = itemObj.item;
-            state.g6_currentQuestionItem = question; 
+            const expectedAnswer = _getComparativeForm(effectiveAdj);
 
-            // Combine all locations for display and shuffle them
-            const locations = [
-                { key: question.answerKey, url: question.urlKey, display: question.keyImage },
-                { key: question.imageA, url: question.urlA, display: question.imageA },
-                { key: question.imageB, url: question.urlB, display: question.imageB }
-            ];
+            // 2. 收集所有可能的干擾選項 (從所有詞彙庫中找)
+            let allDecoys = new Set();
             
-            let uniqueLocations = [];
-            const locationKeys = new Set();
-            locations.forEach(loc => {
-                if (loc.key && !locationKeys.has(loc.key)) {
-                    locationKeys.add(loc.key);
-                    uniqueLocations.push(loc);
-                }
+            // 收集所有答案作為干擾項
+            localData.g7_comparatives.forEach(q => {
+                allDecoys.add(_getComparativeForm(q.adj.toUpperCase()));
+                // 也加入反義詞的比較級作為干擾
+                const antonym = ANTONYM_MAP[q.adj.toUpperCase()];
+                if(antonym) allDecoys.add(_getComparativeForm(antonym));
             });
+            ALL_ADJECTIVES.forEach(adj => allDecoys.add(_getComparativeForm(adj)));
 
-            state.g6_currentQuestion = {
-                ...question,
-                options: shuffleArray(uniqueLocations),
-                isGuessed: false,
-                guessResult: {} 
+            // 移除正確答案
+            allDecoys.delete(expectedAnswer);
+            
+            // 選取 3 個干擾項
+            let incorrectOptions = shuffleArray(Array.from(allDecoys)).slice(0, 3);
+            
+            // Fallback and ensure 4 options
+            while (incorrectOptions.length < 3) {
+                const fallback = shuffleArray(ALL_ADJECTIVES).map(a => _getComparativeForm(a))[0];
+                if (fallback !== expectedAnswer && !incorrectOptions.includes(fallback)) {
+                    incorrectOptions.push(fallback);
+                } else if (incorrectOptions.length < 3) {
+                     // 確保至少有一種形式錯誤，例如原級
+                     if(baseAdj !== expectedAnswer && !incorrectOptions.includes(baseAdj)) incorrectOptions.push(baseAdj);
+                }
+                incorrectOptions = Array.from(new Set(incorrectOptions)).filter(o => o.toUpperCase() !== expectedAnswer.toUpperCase()).slice(0, 3);
+            }
+
+            return {
+                expectedAnswer: expectedAnswer,
+                options: shuffleArray([expectedAnswer, ...incorrectOptions])
             };
-            state.g6_isLocked = false;
-            
-            renderGame6();
-            setTimeout(() => callTTS(question.instruction), 500);
         }
 
-        function handleGuessG6(guessedKey) {
-            if (state.g6_isLocked) return;
-
-            state.g6_isLocked = true;
-            const isCorrect = guessedKey === state.g6_currentQuestion.answerKey;
-            
-            updatePools('game6', state.g6_currentQuestionItem, isCorrect);
-
-            state.g6_currentQuestion.isGuessed = true;
-            state.g6_currentQuestion.guessResult[guessedKey] = isCorrect ? 'correct' : 'incorrect';
-            
-            if (isCorrect) {
-                MessageBox.show("找到了！🗺️ 指令正確！", false);
-                state.g6_score = (state.g6_score || 0) + 1;
-            } else {
-                MessageBox.show(`答錯了，答案是 ${state.g6_currentQuestion.answerKey} 所在地。`, true);
-            }
-
-            renderGame6();
-            setTimeout(newQuestionG6, 2500);
-        }
-
-        function renderGame6(wordError = false) {
-            const container = document.getElementById('game-content');
-            if (currentGame !== 'game6') return;
-
-            if (wordError) {
-                container.innerHTML = `<p class="text-red-500 text-center text-xl p-8">遊戲無法開始：問題單字庫不足！請前往單字後台 (遊戲 6) 新增。</p>`;
-                return;
-            }
-            
-            const statement = state.g6_currentQuestion.instruction.toLowerCase();
-            const isGuessed = state.g6_currentQuestion.isGuessed;
-
-            const locationsHtml = state.g6_currentQuestion.options.map(loc => {
-                const isAnswer = loc.key === state.g6_currentQuestion.answerKey;
-                let spotClass = isGuessed 
-                    ? (isAnswer ? 'correct' : (state.g6_currentQuestion.guessResult[loc.key] === 'incorrect' ? 'incorrect' : 'bg-gray-200 cursor-default'))
-                    : 'hover:scale-[1.05]';
-
-                // 根據是否有 URL 決定顯示圖片還是 Emoji/文字
-                const locationContent = loc.url
-                    ? `<img src="${loc.url}" alt="${loc.display}" onerror="this.onerror=null; this.src='https://placehold.co/80x80/A0A0A0/FFFFFF?text=${loc.display.replace(/\s/g, '+')}'" class="w-20 h-20"/>`
-                    : `<span class="content">${loc.display}</span>`;
-                
-                return `
-                    <div onclick="handleGuessG6('${loc.key}')" 
-                         data-key="${loc.key}"
-                         class="location-spot ${spotClass} transition duration-300 ${isGuessed ? 'pointer-events-none' : ''}">
-                        ${locationContent}
-                        <p class="text-sm font-semibold text-gray-700">${loc.display.toLowerCase()}</p>
-                    </div>
-                `;
-            }).join('');
-
-            container.innerHTML = `
-                <section class="w-full bg-accent-yellow p-4 rounded-xl shadow-inner border-b-8 border-yellow-600">
-                    <h2 class="text-xl md:text-3xl font-bold text-yellow-900 mb-2 text-center">🗺️ 介系詞尋寶 (Preposition Hunt)</h2>
-                    <p class="text-center text-sm mb-2">目標: 點擊喇叭聆聽指令，找出地圖上正確的地點。</p>
-                    <p class="text-center text-xs text-gray-700 mb-4">得分: ${state.g6_score}</p>
-                </section>
-
-                <div class="flex flex-col items-center p-6 bg-keyboard-bg rounded-xl shadow-md w-full">
-                    
-                    <div class="mb-6 p-4 md:p-6 bg-white rounded-xl shadow-lg border-4 border-primary-pink w-full max-w-xl text-center">
-                        <h3 class="text-2xl md:text-3xl font-bold text-gray-800">
-                            ${statement}
-                        </h3>
-                    </div>
-                    
-                    <button onclick="callTTS(state.g6_currentQuestion.instruction)" 
-                            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mb-8">
-                        🔊 聆聽指令
-                    </button>
-
-                    <!-- 地圖區域 -->
-                    <div class="city-map w-full max-w-lg">
-                        ${locationsHtml}
-                    </div>
-
-                    <div class="text-center mt-8">
-                        <button onclick="newQuestionG6()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg">
-                            下一個問題
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-        // --- Game 6 Logic End ---
-
-        
-        // --- Game 7 (Comparative Portal) Logic ---
-        function initGame7(isInit = false) {
-            if (isInit) state.g7_score = 0;
-            newQuestionG7();
-        }
-
-        function newQuestionG7() {
-            const sourceQuestions = getWordList('game7');
-            if (sourceQuestions.length === 0) { renderGame7(true); return; }
-
-            const itemObj = drawNextItem('game7');
-            if (!itemObj) { initGame7(true); return; }
-
-            const question = itemObj.item;
-            state.g7_currentQuestionItem = question; 
-            
-            const correctComp = question.comparative;
-            const allComparatives = ["LONGER", "SHORTER", "PRETTIER", "BETTER", "FASTER", "SLOWER", "BIGGER", "SMALLER"];
-            
-            let wrongOptions = allComparatives.filter(c => c !== correctComp).sort(() => 0.5 - Math.random());
-            
-            let options = new Set([correctComp]);
-            while (options.size < 4 && wrongOptions.length > 0) {
-                options.add(wrongOptions.pop());
-            }
-
-            // 隨機決定題型：A is ___ than B 還是 B is ___ than A
-            const comparisonType = Math.random() < 0.5 ? 'A_THAN_B' : 'B_THAN_A';
-            
-            // 根據題型調整題目顯示
-            let questionText;
-            if (comparisonType === 'A_THAN_B') {
-                // FIX: 移除形容詞，只留空格
-                questionText = `請選出 A 比 B ____?`;
-            } else {
-                 // FIX: 移除形容詞，只留空格
-                 questionText = `請選出 B 比 A ____?`;
-            }
-
-
-            state.g7_currentQuestion = {
-                ...question,
-                options: shuffleArray(Array.from(options)),
-                isGuessed: false,
-                comparisonType: comparisonType,
-                questionText: questionText,
-                // 修正：句子應為完整句子
-                sentence: `THE ${question.noun} IS ${question.comparative}.` 
-            };
-            state.g7_isLocked = false;
-            
+        function initGame7() {
+            if (!setupQuiz('g7_comparatives', 'g7')) return;
             renderGame7();
         }
 
-        function handleGuessG7(guessedComparative) {
-            if (state.g7_isLocked) return;
+        function handleAnswerG7(selectedComparative) {
+            if (state.gameStatus !== 'playing') return;
 
-            state.g7_isLocked = true;
-            const isCorrect = guessedComparative === state.g7_currentQuestion.comparative;
-            
-            updatePools('game7', state.g7_currentQuestionItem, isCorrect);
+            const storedQ = state.g7_currentQuestion;
+            if (!storedQ) return; // Should not happen
 
-            state.g7_currentQuestion.isGuessed = true;
+            const baseAdj = storedQ.adj.toUpperCase();
+            const questionIsAisB = storedQ.isAisB;
 
-            if (isCorrect) {
-                MessageBox.show("傳送成功！✨ 比較正確！", false);
-                state.g7_score = (state.g7_score || 0) + 1;
-            } else {
-                MessageBox.show(`傳送失敗。正確答案是 ${state.g7_currentQuestion.comparative.toLowerCase()}。`, true);
+            let effectiveAdj = baseAdj;
+            if (!questionIsAisB) {
+                // If the question is B vs A (reverse), use the antonym's comparative form
+                effectiveAdj = ANTONYM_MAP[baseAdj] || baseAdj; 
             }
-            
-            renderGame7();
-            callTTS(state.g7_currentQuestion.sentence);
 
-            setTimeout(newQuestionG7, 3500);
+            const expectedAnswer = _getComparativeForm(effectiveAdj);
+            
+            if (selectedComparative === expectedAnswer) {
+                state.score++;
+                MessageBox.show("答對了！平衡儀器正常運作！⚖️", false);
+            } else {
+                MessageBox.show(`答錯了，正確答案是 ${formatDisplayWord(expectedAnswer)}。`, true);
+            }
+
+            setTimeout(() => goToNextQuestion(renderGame7), 1000);
         }
 
-        function renderGame7(wordError = false) {
+        function renderGame7() {
             const container = document.getElementById('game-content');
-            if (currentGame !== 'game7') return;
+            if (!container || currentGame !== 'game7') return; 
 
-            if (wordError) {
-                container.innerHTML = `<p class="text-red-500 text-center text-xl p-8">遊戲無法開始：比較級句型不足！請前往單字後台 (遊戲 7) 新增。</p>`;
+            if (state.gameStatus === 'finished') {
+                container.innerHTML = getFinishedScreen('⚖️ 比較級傳送門', state.score, state.currentQuizSet.length, initGame7);
                 return;
             }
-
-            const current = state.g7_currentQuestion;
-            const isGuessed = current.isGuessed;
-
-            const optionsHtml = current.options.map(option => {
-                const isCorrect = option === current.comparative;
-                const buttonClass = isGuessed
-                    ? (isCorrect ? 'correct opacity-100' : 'bg-gray-300 opacity-60 cursor-default')
-                    : 'hover:bg-blue-300';
-                
-                return `
-                    <button onclick="handleGuessG7('${option}')" 
-                            class="portal-button py-3 px-6 rounded-xl shadow-cute text-xl font-bold transition duration-200 ${buttonClass}"
-                            ${isGuessed ? 'disabled' : ''}>
-                        ${option.toLowerCase()}
-                    </button>
-                `;
-            }).join('');
             
-            const defaultPlaceholder = "https://placehold.co/150x150/A0A0A0/FFFFFF?text=IMAGE";
+            const currentQ = state.currentQuizSet[state.currentQIndex];
+            const questionNumber = state.currentQIndex + 1;
+            
+            // 隨機選擇問法：A 比 B (更...嗎?)
+            const isAisB = Math.random() > 0.5;
+            state.g7_currentQuestion = { ...currentQ, isAisB: isAisB }; // Store state for checking
 
-            const itemAImage = `<img src="${current.urlA || defaultPlaceholder}" alt="Item A" onerror="this.onerror=null; this.src='https://placehold.co/150x150/FFEC99/333?text=A'" class="w-32 h-32 md:w-40 md:h-40"/>`;
-            const itemBImage = `<img src="${current.urlB || defaultPlaceholder}" alt="Item B" onerror="this.onerror=null; this.src='https://placehold.co/150x150/FFEC99/333?text=B'" class="w-32 h-32 md:w-40 md:h-40"/>`;
+            const { expectedAnswer, options: comparativeOptions } = generateComparativeOptionsAndAnswer(currentQ, isAisB);
+            
+            // 決定句子主語和客體
+            const subjectNoun = isAisB ? currentQ.nounA : currentQ.nounB;
+            const objectNoun = isAisB ? currentQ.nounB : currentQ.nounA;
+            const subjectURL = isAisB ? currentQ.urlA : currentQ.urlB;
+            const objectURL = isAisB ? currentQ.urlB : currentQ.urlA;
+            
+            const blank = '____';
+            const questionText = `${formatDisplayWord(subjectNoun, true)} is ${blank} than ${formatDisplayWord(objectNoun)}.`;
 
+            const optionsHtml = comparativeOptions.map(comp => `
+                <button onclick="handleAnswerG7('${comp}')"
+                        class="key-btn g7-option-btn-style font-bold py-3 rounded-xl text-lg shadow-cute">
+                    ${formatDisplayWord(comp)}
+                </button>
+            `).join('');
 
             container.innerHTML = `
-                <section class="w-full bg-secondary-blue p-4 rounded-xl shadow-inner border-b-8 border-blue-600">
-                    <h2 class="text-xl md:text-3xl font-bold text-blue-800 mb-2 text-center">⚖️ 比較級傳送門 (Comparative Portal)</h2>
-                    <p class="text-center text-sm mb-2">目標: 觀察兩件物品，選擇正確的比較級形容詞。</p>
-                    <p class="text-center text-xs text-gray-700 mb-4">得分: ${state.g7_score}</p>
+                <section class="w-full bg-orange-500 p-4 rounded-xl shadow-inner border-b-8 border-orange-800 g7-header">
+                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">⚖️ 比較級傳送門 (comparative quiz)</h2>
+                    <p class="text-center text-sm text-orange-100">目標: 選擇正確的比較級形式。分數: ${state.score}/${questionNumber}</p>
                 </section>
-
-                <div class="flex flex-col items-center p-6 bg-keyboard-bg rounded-xl shadow-md w-full">
+                
+                <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">第 ${questionNumber} 題 / 共 ${state.currentQuizSet.length} 題</h3>
                     
-                    <!-- 物品對比區 -->
-                    <div class="flex justify-around items-end w-full max-w-md mb-8 space-x-4">
-                        <!-- 物品 A -->
-                        <div class="flex flex-col items-center">
-                            <div class="portal-item">${itemAImage}</div>
-                            <p class="text-lg mt-2 text-gray-700">A (${current.noun.toLowerCase()})</p>
+                    <div class="flex justify-center space-x-6 mb-6">
+                        <div class="g7-image-box p-2">
+                            <img src="${subjectURL}" alt="${subjectNoun}" class="w-24 h-24 object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/A0A0A0/FFFFFF?text=${subjectNoun.replace(/_/g, '+')}';">
+                            <p class="mt-2 text-md font-bold text-gray-700">${formatDisplayWord(subjectNoun)}</p>
                         </div>
-                        
-                        <!-- 物品 B -->
-                        <div class="flex flex-col items-center">
-                            <div class="portal-item">${itemBImage}</div>
-                            <p class="text-lg mt-2 text-gray-700">B (${current.noun.toLowerCase()})</p>
+                        <div class="flex items-center justify-center text-5xl font-extrabold text-orange-700">VS</div>
+                        <div class="g7-image-box p-2">
+                            <img src="${objectURL}" alt="${objectNoun}" class="w-24 h-24 object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/A0A0A0/FFFFFF?text=${objectNoun.replace(/_/g, '+')}';">
+                            <p class="mt-2 text-md font-bold text-gray-700">${formatDisplayWord(objectNoun)}</p>
                         </div>
                     </div>
-                    
-                    <!-- 答案顯示區 -->
-                    <div class="mb-6 p-4 bg-white rounded-lg shadow-inner border-4 border-gray-300 w-full max-w-xl text-center">
-                        <p class="text-lg font-semibold text-gray-600 mb-2">${isGuessed ? '完整比較句:' : current.questionText}</p>
-                        <h3 class="text-2xl md:text-3xl font-extrabold text-red-700">
-                            ${isGuessed ? current.sentence.toLowerCase() : '____'}
-                        </h3>
+
+                    <div class="p-4 bg-yellow-100 rounded-lg border-2 border-yellow-400 w-full max-w-xl text-center mb-6 g7-question-area">
+                        <h4 class="text-2xl font-bold text-orange-700 mb-2">請填空 (主要形容詞: ${formatDisplayWord(currentQ.adj)}):</h4>
+                        <p class="text-xl font-medium text-gray-800">${questionText}</p>
                     </div>
 
-                    <!-- 選項按鈕 -->
-                    <div class="grid grid-cols-2 gap-4 w-full max-w-md">
+                    <div class="grid grid-cols-2 gap-4 w-full max-w-lg">
                         ${optionsHtml}
                     </div>
-
-                    <div class="text-center mt-8">
-                        <button onclick="newQuestionG7()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg">
-                            下一個問題
-                        </button>
-                    </div>
+                    
+                    <button onclick="initGame7()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mt-8">重新開始</button>
                 </div>
             `;
         }
-        // --- Game 7 Logic End ---
+        // --- Game 7 End ---
+        
+        // --- 遊戲結束畫面模板 ---
+        function getFinishedScreen(title, score, total, initFunc) {
+            return `
+                <section class="w-full bg-secondary-blue p-6 rounded-xl shadow-inner border-b-8 border-blue-600 text-center">
+                    <h2 class="text-3xl md:text-5xl font-extrabold text-blue-900 mb-4">${title} 🏁 遊戲結束</h2>
+                    <p class="text-2xl font-bold text-gray-800 mb-6">您的最終得分是: <span class="text-red-600">${score} / ${total}</span></p>
+                    <button onclick="${initFunc.name}()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-3 px-8 rounded-full shadow-cute text-xl">
+                        再玩一次
+                    </button>
+                </section>
+            `;
+        }
 
-
-        // --- Admin Panel Logic ---
+        // --- Admin Panel Functions ---
         const ADMIN_TABS = [
-            { key: 'game1', name: '🦖 詞彙配對', minRequired: MIN_REQUIRED_MAP.game1, dataKeys: ["word", "emoji"], placeholder: ["單字 (T-REX)", "Emoji (🦖)"] },
-            { key: 'game2', name: '🤖 字母拼圖', minRequired: MIN_REQUIRED_MAP.game2, dataKeys: ["word"], placeholder: ["單字 (ROBOT)"] },
-            { key: 'game3', name: '🦸 動作指令', minRequired: MIN_REQUIRED_MAP.game3, dataKeys: ["verb", "emoji"], placeholder: ["動作 (JUMP)", "Emoji (⬆️, 可選但無用)"] },
-            { key: 'game4', name: '🚗 文法停車', minRequired: MIN_REQUIRED_MAP.game4, dataKeys: ["pattern", "options", "answer"], placeholder: ["句型 (____)", "選項 (AM,IS,ARE)", "答案 (AM)"] },
-            { key: 'game5', name: '🤥 誰說謊了?', minRequired: MIN_REQUIRED_MAP.game5, dataKeys: ["statement", "answer"], placeholder: ["陳述句", "答案 (TRUE/FALSE)"] },
-            { key: 'game6', name: '🗺️ 介系詞尋寶', minRequired: MIN_REQUIRED_MAP.game6, dataKeys: ["instruction", "keyImage", "imageA", "imageB", "urlKey", "urlA", "urlB"], placeholder: ["指令", "答案圖示/Emoji", "圖示 A", "圖示 B", "URL Ans (選填)", "URL A (選填)", "URL B (選填)"] },
-            { key: 'game7', name: '⚖️ 比較級', minRequired: MIN_REQUIRED_MAP.game7, dataKeys: ["noun", "adj", "comparative", "urlA", "urlB"], placeholder: ["名詞 (SNAKE)", "形容詞 (LONG)", "比較級 (LONGER)", "URL A (選填)", "URL B (選填)"] }
+            { key: 'g1_words', name: '🦖 詞彙配對', headers: ['word', 'emoji'] },
+            { key: 'g2_words', name: '🤖 字母拼圖', headers: ['Word'] },
+            { key: 'g3_actions', name: '🦸 動作指令', headers: ['verb'] }, 
+            { key: 'g4_grammar', name: '🚗 文法停車場', headers: ['sentence', 'answer'] },
+            { key: 'g5_true_false', name: '🤥 誰說謊了?', headers: ['statement', 'imageUrl', 'answer'] },
+            { key: 'g6_qa_match', name: '🗺️ 尋寶問答', headers: ['question', 'answer'] }, 
+            { key: 'g7_comparatives', name: '⚖️ 比較級傳送門', headers: ['nounA', 'nounB', 'adj', 'urlA', 'urlB'] },
         ];
         let currentAdminKey = ADMIN_TABS[0].key;
-
+        
         function getCurrentAdminTab() {
             return ADMIN_TABS.find(t => t.key === currentAdminKey);
         }
 
         function setCurrentAdminKey(key) {
             currentAdminKey = key;
+            selectedWordIds.clear(); 
+            editingItemId = null; // 清空編輯狀態
             renderWordAdmin();
+        }
+        
+        // **新增**：設定編輯項目 ID
+        function editWordAdmin(id) {
+            editingItemId = id;
+            selectedWordIds.clear(); // 編輯時取消所有選中
+            renderWordAdmin();
+        }
+
+        // **新增**：儲存編輯後的項目
+        function saveEditedWordAdmin(id) {
+            const currentList = localData[currentAdminKey] || [];
+            const currentTab = getCurrentAdminTab();
+            const index = currentList.findIndex(item => (currentAdminKey === 'g2_words' ? item === id : item.id === id));
+            
+            if (index === -1) return;
+
+            // 1. 處理 G2 (簡單字串)
+            if (currentAdminKey === 'g2_words') {
+                const newValue = document.getElementById(`edit-input-${id}`).value.trim();
+                if (newValue) {
+                    currentList[index] = newValue;
+                }
+            } 
+            // 2. 處理物件陣列
+            else {
+                let updatedItem = { ...currentList[index] };
+                let isValid = true;
+                
+                currentTab.headers.forEach(header => {
+                    const inputElement = document.getElementById(`edit-input-${id}-${header}`);
+                    if (inputElement) {
+                         const newValue = inputElement.value.trim();
+                         // 對於布林值 (G5 answer)，特殊處理
+                         if (header === 'answer' && currentAdminKey === 'g5_true_false') {
+                             updatedItem[header] = newValue.toLowerCase() === 'true';
+                         } else {
+                             updatedItem[header] = newValue;
+                         }
+                    }
+                    if (!updatedItem[header] && header !== 'imageUrl' && header !== 'urlA' && header !== 'urlB') {
+                        isValid = false; // 確保非圖片 URL 的核心欄位不為空
+                    }
+                });
+
+                if (isValid) {
+                    currentList[index] = updatedItem;
+                } else {
+                    MessageBox.show("儲存失敗：請確保所有核心欄位都已填寫！", true);
+                    return; 
+                }
+            }
+
+            // 3. 完成儲存
+            editingItemId = null; // 退出編輯模式
+            saveWordsToLocal();
+            MessageBox.show("單字已成功儲存！", false);
+            renderWordAdmin();
+        }
+
+        
+        // 處理單個項目勾選
+        function handleSelectItemAdmin(id) {
+            if (selectedWordIds.has(id)) {
+                selectedWordIds.delete(id);
+            } else {
+                selectedWordIds.add(id);
+            }
+            renderWordAdmin();
+        }
+        
+        // 處理全選/取消全選
+        function handleSelectAllAdmin() {
+            const currentList = localData[currentAdminKey] || [];
+            // 獲取當前頁面所有項目的 ID/Value
+            const allCurrentIds = currentList.map(item => currentAdminKey === 'g2_words' ? item : item.id);
+            
+            // 檢查是否所有項目都已選中
+            const isAllSelected = currentList.length > 0 && 
+                                  allCurrentIds.every(id => selectedWordIds.has(id));
+
+            selectedWordIds.clear();
+
+            if (!isAllSelected) {
+                allCurrentIds.forEach(id => selectedWordIds.add(id));
+            }
+
+            renderWordAdmin();
+        }
+        
+        // 處理批量刪除
+        function deleteSelectedWordsAdmin() {
+            const currentList = localData[currentAdminKey] || [];
+            const deletedCount = selectedWordIds.size;
+
+            if (deletedCount === 0) {
+                MessageBox.show("請先勾選要刪除的詞彙！", true);
+                return;
+            }
+            
+            if (currentAdminKey === 'g2_words') {
+                // Handle simple array (g2_words stores strings directly)
+                localData[currentAdminKey] = currentList.filter(word => !selectedWordIds.has(word));
+            } else {
+                // Handle object array (all others store objects with 'id')
+                localData[currentAdminKey] = currentList.filter(item => !selectedWordIds.has(item.id));
+            }
+
+            // 清除選中狀態並儲存
+            selectedWordIds.clear();
+            saveWordsToLocal();
+            MessageBox.show(`成功刪除 ${deletedCount} 個詞彙！`, false);
+            renderWordAdmin();
+        }
+
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                processFileData(content);
+            };
+            reader.readAsText(file);
+        }
+
+        function processFileData(content) {
+            const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            if (lines.length === 0) { MessageBox.show("文件內容為空或無法解析。", true); return; }
+
+            const currentTab = getCurrentAdminTab();
+            let addedCount = 0;
+            let currentList = localData[currentAdminKey];
+
+            lines.forEach(line => {
+                const rawValues = line.split(',').map(v => v.trim());
+                if (rawValues.length === 0) return;
+                
+                let newEntry = null;
+                const newId = crypto.randomUUID();
+                
+                if (currentAdminKey === 'g2_words' && rawValues[0]) {
+                     if (!currentList.includes(rawValues[0])) { newEntry = rawValues[0]; }
+                } 
+                else {
+                    if (currentAdminKey === 'g1_words' && rawValues.length >= 2) {
+                        newEntry = { id: newId, word: rawValues[0], emoji: rawValues[1] };
+                    } 
+                    else if (currentAdminKey === 'g3_actions' && rawValues.length >= 1) {
+                        newEntry = { id: newId, verb: rawValues[0] };
+                    } 
+                    // G4 數據解析邏輯：只需要 sentence 和 answer
+                    else if (currentAdminKey === 'g4_grammar' && rawValues.length >= 2) {
+                        newEntry = { id: newId, sentence: rawValues[0], answer: rawValues[1] };
+                    } 
+                    else if (currentAdminKey === 'g5_true_false' && rawValues.length >= 3) {
+                        newEntry = { id: newId, statement: rawValues[0], imageUrl: rawValues[1], answer: rawValues[2].toLowerCase() === 'true' };
+                    } 
+                    else if (currentAdminKey === 'g6_qa_match' && rawValues.length >= 2) {
+                        const answer = rawValues[1];
+                        newEntry = { id: newId, question: rawValues[0], answer: answer };
+                    } 
+                    else if (currentAdminKey === 'g7_comparatives' && rawValues.length >= 3) {
+                        newEntry = { id: newId, nounA: rawValues[0], nounB: rawValues[1], adj: rawValues[2], urlA: rawValues[3] || '', urlB: rawValues[4] || '' };
+                    }
+                }
+
+                if (newEntry) {
+                    if (currentAdminKey === 'g2_words') {
+                        currentList.push(newEntry);
+                    } else if (!currentList.some(item => JSON.stringify(item) === JSON.stringify(newEntry))) {
+                        currentList.push(newEntry);
+                    }
+                    addedCount++;
+                }
+            });
+
+            if (addedCount > 0) {
+                saveWordsToLocal(); 
+                MessageBox.show(`成功從文件新增 ${addedCount} 個詞彙到 ${currentTab.name}！`, false);
+                renderWordAdmin();
+            } else {
+                 MessageBox.show(`文件解析完成，但沒有新增任何新的詞彙。請檢查文件格式。`, true);
+            }
+            
+            document.getElementById('file-upload-input').value = null;
         }
 
         function addWordAdmin() {
-            if (isGeneratingImage) return;
-
-            const tab = getCurrentAdminTab();
+            const currentTab = getCurrentAdminTab();
+            const inputElement = document.getElementById('admin-input-bulk');
+            const inputContent = inputElement ? inputElement.value.trim() : '';
             
-            // Collect inputs
-            const inputs = {};
-            inputs.input1 = document.getElementById('admin-input-1')?.value.trim().toUpperCase();
-            inputs.input2 = document.getElementById('admin-input-2')?.value.trim(); // 保持 case for Emoji/Options
-            inputs.input3 = document.getElementById('admin-input-3')?.value.trim();
-            inputs.input4 = document.getElementById('admin-input-4')?.value.trim();
-            inputs.input5 = document.getElementById('admin-input-5')?.value.trim();
-            inputs.input6 = document.getElementById('admin-input-6')?.value.trim();
-            inputs.input7 = document.getElementById('admin-input-7')?.value.trim();
+            if (!inputContent) { MessageBox.show("請輸入詞彙內容！", true); return; }
 
+            const lines = inputContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            let addedCount = 0;
+            let currentList = localData[currentAdminKey];
 
-            let newEntry = null;
+            lines.forEach(line => {
+                const rawValues = line.split(',').map(v => v.trim());
+                if (rawValues.length === 0) return;
+                
+                let newEntry = null;
+                const newId = crypto.randomUUID();
 
-            if (tab.key === 'game1') {
-                 // word, emoji
-                if (!inputs.input1 || !inputs.input2) { MessageBox.show("請填寫單字和 Emoji！", true); return; }
-                newEntry = { id: crypto.randomUUID(), word: inputs.input1, emoji: inputs.input2 };
+                if (currentAdminKey === 'g2_words' && rawValues[0]) {
+                     if (!currentList.includes(rawValues[0])) newEntry = rawValues[0];
+                } 
+                else {
+                    if (currentAdminKey === 'g1_words' && rawValues.length >= 2) {
+                        newEntry = { id: newId, word: rawValues[0], emoji: rawValues[1] };
+                    } 
+                    else if (currentAdminKey === 'g3_actions' && rawValues.length >= 1) {
+                        newEntry = { id: newId, verb: rawValues[0] };
+                    }
+                    // G4 數據解析邏輯：只需要 sentence 和 answer
+                    else if (currentAdminKey === 'g4_grammar' && rawValues.length >= 2) {
+                        newEntry = { id: newId, sentence: rawValues[0], answer: rawValues[1] };
+                    } 
+                    else if (currentAdminKey === 'g5_true_false' && rawValues.length >= 3) {
+                        newEntry = { id: newId, statement: rawValues[0], imageUrl: rawValues[1], answer: rawValues[2].toLowerCase() === 'true' };
+                    } 
+                    else if (currentAdminKey === 'g6_qa_match' && rawValues.length >= 2) {
+                        const answer = rawValues[1];
+                        newEntry = { id: newId, question: rawValues[0], answer: answer };
+                    }
+                    else if (currentAdminKey === 'g7_comparatives' && rawValues.length >= 3) {
+                        newEntry = { id: newId, nounA: rawValues[0], nounB: rawValues[1], adj: rawValues[2], urlA: rawValues[3] || '', urlB: rawValues[4] || '' };
+                    }
+                }
+                
+                if (newEntry) {
+                    if (currentAdminKey === 'g2_words') {
+                        currentList.push(newEntry);
+                    } else if (!currentList.some(item => JSON.stringify(item) === JSON.stringify(newEntry))) {
+                         currentList.push(newEntry);
+                    } else {
+                         return; 
+                    }
+                    addedCount++;
+                }
+            });
 
-            } else if (tab.key === 'game2') {
-                // word
-                if (!inputs.input1) { MessageBox.show("請填寫單字！", true); return; }
-                newEntry = { id: crypto.randomUUID(), word: inputs.input1 };
-
-            } else if (tab.key === 'game3') {
-                // verb, emoji (only verb is used in game, but saving structure for consistency)
-                if (!inputs.input1) { MessageBox.show("請填寫動作單字！", true); return; }
-                newEntry = { id: crypto.randomUUID(), verb: inputs.input1, emoji: inputs.input2 || '❓' }; // Emoji is optional/filler
-
-            } else if (tab.key === 'game4') {
-                // pattern, options (comma-separated), answer
-                if (!inputs.input1 || !inputs.input2 || !inputs.input3) { MessageBox.show("請填寫句型、選項和答案！", true); return; }
-                const optionsArray = inputs.input2.split(',').map(o => o.trim().toUpperCase()).filter(o => o.length > 0);
-                newEntry = { id: crypto.randomUUID(), pattern: inputs.input1, options: optionsArray, answer: inputs.input3 };
-
-            } else if (tab.key === 'game5') {
-                // statement, answer (TRUE/FALSE)
-                if (!inputs.input1 || !inputs.input2 || (inputs.input2.toUpperCase() !== 'TRUE' && inputs.input2.toUpperCase() !== 'FALSE')) { MessageBox.show("請填寫陳述句，答案必須是 TRUE 或 FALSE！", true); return; }
-                newEntry = { id: crypto.randomUUID(), statement: inputs.input1, answer: inputs.input2.toUpperCase() };
-
-            } else if (tab.key === 'game6') {
-                 // instruction, keyImage, imageA, imageB, urlKey, urlA, urlB
-                if (!inputs.input1 || !inputs.input2 || !inputs.input3 || !inputs.input4) { MessageBox.show("請填寫指令和至少三個位置圖示/Emoji！", true); return; }
-                newEntry = {
-                    id: crypto.randomUUID(), instruction: inputs.input1, keyImage: inputs.input2, 
-                    imageA: inputs.input3, imageB: inputs.input4, answerKey: inputs.input2,
-                    urlKey: inputs.input5 || '', urlA: inputs.input6 || '', urlB: inputs.input7 || ''
-                };
-
-            } else if (tab.key === 'game7') {
-                // noun, adj, comparative, urlA, urlB
-                if (!inputs.input1 || !inputs.input2 || !inputs.input3) { MessageBox.show("請填寫名詞、形容詞和比較級！", true); return; }
-                newEntry = {
-                    id: crypto.randomUUID(), noun: inputs.input1, adj: inputs.input2, comparative: inputs.input3,
-                    urlA: inputs.input4 || '', urlB: inputs.input5 || '' 
-                };
+            if (addedCount > 0) {
+                saveWordsToLocal(); 
+                MessageBox.show(`成功新增 ${addedCount} 個詞彙！`, false);
+                inputElement.value = ''; 
+                renderWordAdmin();
+            } else {
+                 MessageBox.show("請檢查輸入內容是否為新詞彙且格式正確。", true);
             }
-            
-            if (!newEntry) { MessageBox.show("新增失敗，請檢查輸入。", true); return; }
-
-            // Simple duplicate check before final save
-            const list = localCustomWords[tab.key];
-            const entryKey = getItemKey(newEntry, tab.key);
-            if (list.some(item => getItemKey(item, tab.key) === entryKey)) {
-                MessageBox.show("詞彙已存在！", true); return;
-            }
-
-            localCustomWords[tab.key].push(newEntry);
-            saveWordsToLocal();
-            MessageBox.show(`詞彙新增成功！`, false);
-            
-            // Clear inputs and rerender
-            document.getElementById('admin-input-1').value = '';
-            document.getElementById('admin-input-2').value = '';
-            document.getElementById('admin-input-3').value = '';
-            if (document.getElementById('admin-input-4')) document.getElementById('admin-input-4').value = '';
-            if (document.getElementById('admin-input-5')) document.getElementById('admin-input-5').value = '';
-            if (document.getElementById('admin-input-6')) document.getElementById('admin-input-6').value = '';
-            if (document.getElementById('admin-input-7')) document.getElementById('admin-input-7').value = '';
-
-            renderWordAdmin();
         }
 
-        function deleteWordAdmin(id) {
-            if (isGeneratingImage) { MessageBox.show("圖片生成中，請稍候再試。", true); return; }
-            
-            const list = localCustomWords[currentAdminKey];
-            const initialLength = list.length;
 
-            localCustomWords[currentAdminKey] = list.filter(item => item.id !== id);
-            
-            if (localCustomWords[currentAdminKey].length < initialLength) {
-                saveWordsToLocal();
-                MessageBox.show("詞彙刪除成功！", false);
+        // 單獨刪除項目
+        function deleteWordAdmin(id) {
+            const currentTab = getCurrentAdminTab();
+            const list = localData[currentAdminKey];
+
+            if (currentAdminKey === 'g2_words') {
+                // Simple String Array: Filter by value
+                 localData[currentAdminKey] = list.filter(item => item !== id);
             } else {
-                 MessageBox.show("詞彙刪除失敗，找不到該 ID。", true);
+                // Object Array: Filter by ID
+                localData[currentAdminKey] = list.filter(item => item.id !== id);
             }
             
+            // 確保選中狀態同步清除
+            selectedWordIds.delete(id); 
+
+            saveWordsToLocal(); 
+            MessageBox.show("詞彙單獨刪除成功！", false);
             renderWordAdmin();
         }
 
         function renderWordAdmin() {
             const container = document.getElementById('game-content');
-            if (currentGame !== 'admin') return;
+            if (!container || currentGame !== 'admin') return; 
 
-            const tab = getCurrentAdminTab();
-            const currentList = localCustomWords[tab.key] || [];
-            
-            const listCount = currentList.length;
-            const minRequired = tab.minRequired;
-            const isReady = listCount >= minRequired;
+            const currentList = localData[currentAdminKey] || [];
+            const currentTab = getCurrentAdminTab();
 
-            let inputContent = '';
-            let inputPlaceholders = tab.placeholder;
-            
-            // Render input layout dynamically
-            if (tab.key === 'game4') {
-                 inputContent = `
-                    <input type="text" id="admin-input-1" placeholder="${inputPlaceholders[0]}" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase mb-2">
-                    <div class="flex space-x-2 w-full">
-                        <input type="text" id="admin-input-2" placeholder="${inputPlaceholders[1]}" class="flex-1 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase">
-                        <input type="text" id="admin-input-3" placeholder="${inputPlaceholders[2]}" class="w-1/4 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase">
-                    </div>
-                 `;
-            } else if (tab.key === 'game7') {
-                 inputContent = `
-                    <div class="flex space-x-2 w-full mb-2">
-                         <input type="text" id="admin-input-1" placeholder="${inputPlaceholders[0]}" class="w-1/3 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase">
-                         <input type="text" id="admin-input-2" placeholder="${inputPlaceholders[1]}" class="w-1/3 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase">
-                         <input type="text" id="admin-input-3" placeholder="${inputPlaceholders[2]}" class="w-1/3 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase">
-                    </div>
-                    <div class="flex space-x-2 w-full">
-                         <input type="text" id="admin-input-4" placeholder="${inputPlaceholders[3]}" class="flex-1 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue">
-                         <input type="text" id="admin-input-5" placeholder="${inputPlaceholders[4]}" class="flex-1 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue">
-                    </div>
-                 `;
-            } else if (tab.key === 'game6') {
-                 inputContent = `
-                    <input type="text" id="admin-input-1" placeholder="${inputPlaceholders[0]}" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue mb-2">
-                    <div class="flex space-x-2 w-full mb-2">
-                         <input type="text" id="admin-input-2" placeholder="${inputPlaceholders[1]}" class="flex-1 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase">
-                         <input type="text" id="admin-input-3" placeholder="${inputPlaceholders[2]}" class="flex-1 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase">
-                         <input type="text" id="admin-input-4" placeholder="${inputPlaceholders[3]}" class="flex-1 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase">
-                    </div>
-                     <div class="flex space-x-2 w-full">
-                         <input type="text" id="admin-input-5" placeholder="${inputPlaceholders[4]}" class="flex-1 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue">
-                         <input type="text" id="admin-input-6" placeholder="${inputPlaceholders[5]}" class="flex-1 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue">
-                         <input type="text" id="admin-input-7" placeholder="${inputPlaceholders[6]}" class="flex-1 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue">
-                     </div>
-                 `;
-            } else if (tab.key === 'game2' || tab.key === 'game5') {
-                 inputContent = `<div class="flex space-x-2 w-full">
-                    <input type="text" id="admin-input-1" placeholder="${inputPlaceholders[0]}" class="flex-1 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase">
-                    <input type="text" id="admin-input-2" placeholder="${inputPlaceholders[1]}" class="w-1/3 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase">
-                    </div>`;
-            } else if (tab.key === 'game1' || tab.key === 'game3') {
-                // game1: word, emoji. game3: verb, emoji (optional)
-                inputContent = `<div class="flex space-x-2 w-full">
-                    <input type="text" id="admin-input-1" placeholder="${inputPlaceholders[0]}" class="flex-1 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue uppercase">
-                    <input type="text" id="admin-input-2" placeholder="${inputPlaceholders[1]}" class="w-1/3 p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue">
-                    </div>`;
-            }
+            const inputPlaceholder = `請使用逗號分隔，每行一筆資料。格式：${currentTab.headers.join(', ')}`;
 
-            const wordListHtml = currentList.map((item, index) => {
-                // FIX: 確保 display 顯示所有相關屬性
-                let display = '';
-                if (tab.key === 'game1') display = `${item.word} (${item.emoji})`;
-                else if (tab.key === 'game3') display = `${item.verb}`;
-                else if (tab.key === 'game7') display = `${item.noun} / ${item.adj} -> ${item.comparative} | URLs: ${item.urlA || 'N/A'}, ${item.urlB || 'N/A'}`;
-                else display = JSON.stringify(item).replace(/"/g, '').replace(/{|}/g, '').toUpperCase();
+            // --- Selection Logic Setup ---
+            // 獲取當前頁面所有項目的 ID/Value
+            const allCurrentIds = currentList.map(item => currentAdminKey === 'g2_words' ? item : item.id);
+            // 檢查是否所有項目都已選中 (且列表不為空)
+            const isAllSelected = currentList.length > 0 && 
+                                  allCurrentIds.every(id => selectedWordIds.has(id));
+            const selectedCount = allCurrentIds.filter(id => selectedWordIds.has(id)).length;
+
+
+            // --- Header Controls ---
+            const controlHeaderHtml = `
+                <div class="flex justify-between items-center bg-gray-200 p-4 rounded-t-xl border-b border-gray-300">
+                    <label class="flex items-center space-x-2 text-sm font-bold text-gray-700 cursor-pointer">
+                        <input type="checkbox" 
+                                class="form-checkbox h-5 w-5 text-blue-600 rounded cursor-pointer" 
+                                onchange="handleSelectAllAdmin()"
+                                ${isAllSelected ? 'checked' : ''}>
+                        <span>全選 (${selectedCount}/${currentList.length})</span>
+                    </label>
+                    <button onclick="deleteSelectedWordsAdmin()" 
+                            class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full text-sm shadow-md transition duration-150"
+                            ${selectedCount === 0 ? 'disabled' : ''}>
+                        🗑️ 刪除選定 (${selectedCount})
+                    </button>
+                </div>
+            `;
+
+
+            const listHtml = currentList.map((item, index) => {
+                let display;
+                let deleteId; // This ID is used for both deletion and selection
+
+                if (currentAdminKey === 'g2_words') {
+                    display = formatDisplayWord(item);
+                    deleteId = item; // ID is the string value itself
+                } else {
+                    display = JSON.stringify(item);
+                    deleteId = item.id; // ID is the object's unique ID
+                    
+                    if (currentAdminKey === 'g1_words') display = `${item.emoji} / ${formatDisplayWord(item.word)}`;
+                    else if (currentAdminKey === 'g3_actions') display = `Verb: ${formatDisplayWord(item.verb)}`; 
+                    else if (currentAdminKey === 'g4_grammar') display = `Sentence: ${formatDisplayWord(item.sentence)} / Answer: ${formatDisplayWord(item.answer)}`;
+                    else if (currentAdminKey === 'g5_true_false') display = `Statment: ${formatDisplayWord(item.statement)} / Ans: ${item.answer} / Img: ${item.imageUrl.substring(0, 10)}...`;
+                    else if (currentAdminKey === 'g6_qa_match') display = `Q: ${formatDisplayWord(item.question)} / Ans: ${formatDisplayWord(item.answer)}`; 
+                    else if (currentAdminKey === 'g7_comparatives') display = `${item.nounA} vs ${item.nounB} (${item.adj})`;
+                }
                 
+                const isChecked = selectedWordIds.has(deleteId);
+                const isEditing = deleteId === editingItemId;
+
+                // --- 內聯編輯模式 ---
+                if (isEditing) {
+                    let editInputs = '';
+                    let itemToEdit = currentAdminKey === 'g2_words' ? item : currentList.find(i => i.id === deleteId);
+                    
+                    // G2 簡單字串編輯
+                    if (currentAdminKey === 'g2_words') {
+                        editInputs = `
+                            <div class="w-full">
+                                <label class="block text-xs font-bold mb-1">Word</label>
+                                <input id="edit-input-${deleteId}" type="text" class="admin-input" value="${itemToEdit}">
+                            </div>
+                        `;
+                    }
+                    // 物件陣列編輯
+                    else {
+                        editInputs = currentTab.headers.map(header => {
+                            const value = itemToEdit[header] || '';
+                            // 圖片 URL 欄位較長，給予更多空間
+                            const inputType = header.includes('url') ? 'text' : 'text'; 
+                            const label = header.charAt(0).toUpperCase() + header.slice(1);
+                            
+                            return `
+                                <div class="w-1/2 md:w-1/3 p-1">
+                                    <label class="block text-xs font-bold mb-1 text-gray-700">${label.replace(/_/g, ' ')}</label>
+                                    <input id="edit-input-${deleteId}-${header}" type="${inputType}" class="admin-input" value="${value}" placeholder="${label}">
+                                </div>
+                            `;
+                        }).join('');
+                        editInputs = `<div class="flex flex-wrap -m-1 w-full">${editInputs}</div>`;
+                    }
+                    
+                    return `
+                        <li class="p-3 bg-yellow-100 rounded-lg shadow-xl mb-2 border-4 border-yellow-500 flex flex-col items-start space-y-2">
+                            <h4 class="text-lg font-bold text-yellow-800">編輯項目 #${index + 1}</h4>
+                            ${editInputs}
+                            <div class="flex justify-end w-full space-x-2 mt-2">
+                                <button onclick="saveEditedWordAdmin('${deleteId}')" class="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-full text-sm">
+                                    儲存 ✅
+                                </button>
+                                <button onclick="editingItemId=null; renderWordAdmin()" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded-full text-sm">
+                                    取消
+                                </button>
+                            </div>
+                        </li>
+                    `;
+                }
+
+                // --- 顯示模式 ---
                 return `
-                    <li class="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm mb-2 border-l-4 border-primary-pink">
-                        <span class="text-sm md:text-lg font-bold text-gray-800">${index + 1}. ${display}</span>
-                        <button onclick="deleteWordAdmin('${item.id}')" class="text-red-500 hover:text-red-700 font-bold p-1 rounded-full bg-red-100 transition duration-150">
-                            🗑️ 刪除
-                        </button>
+                    <li class="flex items-center p-3 bg-white rounded-lg shadow-sm mb-2 border-l-4 border-primary-pink transition duration-100 ${isChecked ? 'bg-blue-50 border-blue-400' : ''}">
+                        <input type="checkbox" 
+                                class="form-checkbox h-5 w-5 text-blue-600 rounded mr-3 flex-shrink-0 cursor-pointer" 
+                                onchange="handleSelectItemAdmin('${deleteId}')"
+                                ${isChecked ? 'checked' : ''}>
+                        <span class="text-sm md:text-lg font-bold text-gray-800 break-all flex-grow">${index + 1}. ${display}</span>
+                        
+                        <div class="flex space-x-2 flex-shrink-0 ml-2">
+                            <button onclick="editWordAdmin('${deleteId}')" class="text-blue-500 hover:text-blue-700 font-bold p-1 rounded-full bg-blue-100 transition duration-150 whitespace-nowrap text-sm">
+                                編輯 ✏️
+                            </button>
+                            <button onclick="deleteWordAdmin('${deleteId}')" class="text-red-500 hover:text-red-700 font-bold p-1 rounded-full bg-red-100 transition duration-150 whitespace-nowrap text-sm">
+                                單獨刪除 🗑️
+                            </button>
+                        </div>
                     </li>
                 `;
             }).join('');
 
-            const isImageGame = (tab.key === 'game6' || tab.key === 'game7');
-            let addButtonText = '➕ 新增';
-
-
             container.innerHTML = `
                 <section class="w-full bg-primary-pink p-4 rounded-xl shadow-inner border-b-8 border-pink-600">
-                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">⚙️ 單字/設定管理後台 (Local Storage Admin Panel)</h2>
-                    <p class="text-center text-sm text-pink-100">💡 這裡的詞彙僅儲存在您當前的瀏覽器中。</p>
+                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">⚙️ 單字/設定管理後台 (local storage admin panel)</h2>
+                    <p class="text-center text-sm text-pink-100">💡 這裡的單字僅儲存在您當前的瀏覽器中。</p>
                 </section>
                 
                 <div class="flex flex-wrap justify-center space-x-1 mb-4">
-                    ${ADMIN_TABS.map(t => `<button onclick="setCurrentAdminKey('${t.key}')" class="tab-btn py-2 px-3 ${currentAdminKey === t.key ? 'bg-secondary-blue text-blue-900 shadow-lg' : 'bg-gray-100 text-gray-700'}">${t.name}</button>`).join('')}
+                    ${ADMIN_TABS.map(tab => `
+                        <button onclick="setCurrentAdminKey('${tab.key}')" class="tab-btn py-2 px-3 ${currentAdminKey === tab.key ? 'bg-secondary-blue text-blue-900 shadow-lg' : 'bg-gray-100 text-gray-700'}">
+                            ${tab.name}
+                        </button>
+                    `).join('')}
+                </div>
+                
+                <div class="file-upload-container mb-4 w-full p-4 bg-gray-100 rounded-xl shadow-md">
+                    <label for="file-upload-input" class="text-sm font-semibold text-gray-700 mr-2 whitespace-nowrap">⬆️ 匯入檔案 (.csv/.txt):</label>
+                    <input type="file" id="file-upload-input" accept=".csv,.txt" class="file-upload-input" onchange="handleFileUpload(event)">
+                    <p class="text-xs text-red-600 mt-2">**請確保文件格式符合所選遊戲的逗號分隔要求。**</p>
                 </div>
 
-                <div class="p-6 bg-keyboard-bg rounded-xl shadow-md">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">新增 ${tab.name} 詞彙</h3>
-                    
-                    <p class="text-xs ${isReady ? 'text-green-600' : 'text-red-600'} font-bold mb-3">
-                        ${isReady ? '✅ 詞彙量足夠，遊戲準備就緒！' : `❗ 該遊戲需要至少 ${minRequired} 個項目才能開始 (目前 ${listCount} 個)`}
-                    </p>
 
-                    ${inputContent}
-
-                    <button id="admin-add-button" onclick="addWordAdmin()" 
-                            class="w-full bg-secondary-blue hover:bg-blue-400 text-blue-900 font-bold py-3 px-6 rounded-lg shadow-cute transition duration-150 mt-4"
-                            ${isGeneratingImage ? 'disabled' : ''}>
-                        ${addButtonText}
+                <div class="p-6 bg-keyboard-bg rounded-xl shadow-md w-full">
+                    <label for="admin-input-bulk" class="block text-lg font-semibold text-gray-800 mb-2">新增 ${currentTab.name} 詞彙 (批量)</label>
+                    <textarea id="admin-input-bulk" placeholder="${inputPlaceholder}" class="p-3 border-2 border-gray-300 rounded-lg focus:ring-secondary-blue focus:border-secondary-blue w-full resize-y h-32 mb-2"></textarea>
+                    <button onclick="addWordAdmin()" 
+                            class="bg-secondary-blue hover:bg-blue-400 text-blue-900 font-bold py-3 px-6 rounded-lg shadow-cute transition duration-150">
+                        ➕ 批量新增
                     </button>
                 </div>
 
                 <div class="p-6 bg-white rounded-xl shadow-md border-2 border-gray-200">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">${tab.name} 列表 (${currentList.length} 個)</h3>
-                    <ul class="max-h-80 overflow-y-auto">
-                        ${currentList.length > 0 ? wordListHtml : '<p class="text-gray-500 text-center py-4">目前沒有詞彙。請新增！</p>'}
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">${currentTab.name} 列表 (${currentList.length} 個)</h3>
+                    ${controlHeaderHtml}
+                    <ul class="max-h-80 overflow-y-auto pt-4">
+                        ${currentList.length > 0 ? listHtml : '<p class="text-gray-500 text-center py-4">目前沒有詞彙。請新增！</p>'}
                     </ul>
                     <p class="text-xs text-gray-400 mt-4 text-center">您的設定已自動儲存。</p>
                 </div>
             `;
         }
+        
+        function initializeApp(retries = 0) {
+            const container = document.getElementById('game-content');
+            if (!container) {
+                if (retries < 10) { 
+                    setTimeout(() => initializeApp(retries + 1), 50);
+                } else {
+                    console.error("Critical Error: Failed to initialize app. The 'game-content' container never became available.");
+                    document.body.innerHTML = '<div style="color: red; text-align: center; margin-top: 50px;">應用程式無法啟動。請重新載入或檢查瀏覽器環境。</div>';
+                }
+                return;
+            }
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.add('bg-white', 'py-2', 'px-3', 'md:px-4', 'rounded-full', 'text-xs', 'md:text-sm', 'font-bold', 'text-gray-700', 'transition', 'duration-300', 'shadow-md', 'hover:bg-secondary-blue');
+                
+                const gameName = btn.getAttribute('data-game');
+                if (gameName) {
+                    btn.addEventListener('click', () => changeGame(gameName));
+                }
+            });
+
+            setTabActive(currentGame);
+            renderApp();
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
     </script>
 </body>
 </html>
