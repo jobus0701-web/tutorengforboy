@@ -232,21 +232,80 @@
     </style>
 
     <script>
-        // --- 核心全域變數 ---
+        // 設定 Tailwind 配置, 使用柔和可愛的馬卡龍配色
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-pink': '#FFC7C7',      // 主題粉 (柔和可愛)
+                        'secondary-blue': '#BDE0FE',    // 輔助藍
+                        'accent-yellow': '#FFEC99',     // 強調黃
+                        'background-light': '#F8F8F8',  // 淺背景
+                        'keyboard-bg': '#FFF5D6',       // 鍵盤區塊背景
+                    },
+                    boxShadow: {
+                        'cute': '0 4px 0 0 #D1A3A3',    // 按鈕立體陰影
+                        'key-active': '0 2px 0 0 #D1A3A3', // 按下時的陰影
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background-light min-h-screen game-font flex flex-col items-center p-4">
+
+    <!-- 訊息提示框 -->
+    <div id="message-box" class="fixed top-4 right-4 bg-red-500 text-white p-3 rounded-lg shadow-xl z-50 transition-opacity duration-300 hidden">
+        <p id="message-content"></p>
+    </div>
+
+    <!-- 頂部標題與導航 -->
+    <header class="w-full max-w-6xl text-center mb-4 p-4 bg-primary-pink rounded-2xl shadow-lg border-b-4 border-pink-400">
+        <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-wider">
+            <!-- 可愛小豬圖示 (SVG) -->
+            <svg class="h-10 w-10 md:h-12 md:w-12 inline-block mr-3 transform -translate-y-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM15 9C15.8284 9 16.5 8.32843 16.5 = 7.5C16.5 6.67157 15.8284 6 15 6C14.1716 6 13.5 6.67157 13.5 7.5C13.5 8.32843 14.1716 9 15 9ZM9 9C9.82843 9 10.5 8.32843 10.5 7.5C10.5 6.67157 9.82843 6 9 6C8.17157 6 7.5 6.67157 7.5 7.5C7.5 8.32843 8.17157 9 9 9Z" fill="#FF8FAB"/>
+                <path d="M12 17C14.2091 17 16 15.2091 16 13C16 10.7909 14.2091 9 12 9C9.79086 9 8 10.7909 8 13C8 15.2091 9.79086 17 12 17Z" fill="#F0B5C2"/>
+                <circle cx="11" cy="13" r="1" fill="#FF8FAB"/>
+                <circle cx="13" cy="13" r="1" fill="#FF8FAB"/>
+            </svg>
+            英文遊戲樂園
+        </h1>
+    </header>
+
+    <!-- 導航列 (4 欄式兩列佈局) -->
+    <nav class="w-full max-w-6xl mb-6">
+        <div class="grid grid-cols-4 gap-2 md:gap-4 justify-center">
+            
+            <button data-game="game1" id="tab-game1" onclick="changeGame('game1')" class="tab-btn">🦖 詞彙配對</button>
+            <button data-game="game2" id="tab-game2" onclick="changeGame('game2')" class="tab-btn">🤖 字母拼圖</button>
+            <button data-game="game3" id="tab-game3" onclick="changeGame('game3')" class="tab-btn">🦸 動作指令</button>
+            <button data-game="game4" id="tab-game4" onclick="changeGame('game4')" class="tab-btn">🚗 文法停車</button>
+            
+            <button data-game="game5" id="tab-game5" onclick="changeGame('game5')" class="tab-btn">🤥 誰說謊了?</button>
+            <button data-game="game6" id="tab-game6" onclick="changeGame('game6')" class="tab-btn">🗺️ 介系詞尋寶</button>
+            <button data-game="game7" id="tab-game7" onclick="changeGame('game7')" class="tab-btn">⚖️ 比較級</button>
+            <button data-game="admin" id="tab-admin" onclick="changeGame('admin')" class="tab-btn">⚙️ 單字後台</button>
+        </div>
+    </nav>
+
+    <!-- 主內容區 -->
+    <main id="game-content" class="w-full max-w-6xl bg-white p-4 md:p-8 rounded-2xl shadow-xl border-4 border-secondary-blue flex flex-col space-y-6 min-h-[600px]">
+        <div class="flex justify-center items-center h-full">
+            <p class="text-xl text-gray-500">正在載入應用程式...</p>
+        </div>
+    </main>
+    
+    <script>
+        // --- 全域設定與工具 (與程式碼 1 結構一致) ---
         const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split(''); 
-        const BASE_STORAGE_KEY = 'G_CustomWords_Unified_V2_'; // 基礎儲存鍵
+        const LOCAL_STORAGE_KEY = 'G_CustomWords_Unified_V2_AI'; // 統一的 localStorage key
         const G4_BINGO_SIZE = 4;
         
         let currentGame = 'game1'; // 遊戲啟動時的當前遊戲
-        let playerName = ''; // 當前玩家名稱
+        
+        // 移除 AI 相關變數
         let isGeneratingImage = false; 
-
-        // 根據玩家名稱生成唯一的 localStorage key
-        function getLocalStorageKey() {
-            // 清理玩家名稱，確保 key 有效且不包含特殊字元
-            const cleanedName = playerName.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-            return BASE_STORAGE_KEY + (cleanedName || 'GUEST');
-        }
         
         // 最小項目要求地圖
         const MIN_REQUIRED_MAP = {
@@ -406,12 +465,11 @@
         // --- LocalStorage Logic ---
         function loadWordsFromLocal() {
             try {
-                const stored = localStorage.getItem(getLocalStorageKey());
+                const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
                 const loadedData = stored ? JSON.parse(stored) : {};
                 
                 // Initialize localCustomWords with default values or loaded data
                 for (const key in DICTIONARY_MAP) {
-                    // 如果讀取到的資料為空或非陣列，則使用預設值
                     localCustomWords[key] = Array.isArray(loadedData[key]) ? loadedData[key] : DICTIONARY_MAP[key];
                 }
             } catch (e) {
@@ -426,7 +484,7 @@
                 for (const key in localCustomWords) {
                     dataToSave[key] = localCustomWords[key];
                 }
-                localStorage.setItem(getLocalStorageKey(), JSON.stringify(dataToSave));
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
             } catch (e) {
                 console.error("Error saving words to local storage:", e);
                 MessageBox.show("無法保存單字到您的瀏覽器。", true);
@@ -519,12 +577,6 @@
 
         function renderApp() {
             loadWordsFromLocal(); 
-            // 更新標題顯示玩家名稱
-            const titleElement = document.getElementById('main-title');
-            if (titleElement) {
-                 titleElement.textContent = `英文遊戲樂園 - 玩家: ${playerName}`;
-            }
-
             switch (currentGame) {
                 case 'game1': initGame1(true); break;
                 case 'game2': initGame2(true); break;
@@ -539,15 +591,6 @@
         }
 
         window.onload = function() {
-            // 1. 彈出提示框獲取玩家名稱
-            let name = prompt("請輸入玩家名稱 (例如: brain 或 ivy) 以載入個人化詞彙庫：");
-            if (name) {
-                playerName = name.trim();
-            } else {
-                playerName = 'GUEST'; // 預設訪客名稱
-            }
-            
-            // 2. 應用程式其餘初始化
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.add('bg-white', 'hover:bg-secondary-blue', 'py-2', 'px-3', 'md:px-4', 'rounded-full', 'text-xs', 'md:text-sm', 'font-bold', 'text-gray-700', 'transition', 'duration-300', 'shadow-md');
             });
@@ -634,7 +677,6 @@
 
         function renderGame1(wordError = false) {
              const container = document.getElementById('game-content');
-            if (!container) return; // FIX: Added defensive check
             if (currentGame !== 'game1') return;
 
             if (wordError) {
@@ -1617,7 +1659,6 @@
 
         function renderWordAdmin() {
             const container = document.getElementById('game-content');
-            if (!container) return; // FIX: Added defensive check
             if (currentGame !== 'admin') return;
 
             const tab = getCurrentAdminTab();
@@ -1702,7 +1743,7 @@
 
             container.innerHTML = `
                 <section class="w-full bg-primary-pink p-4 rounded-xl shadow-inner border-b-8 border-pink-600">
-                    <h2 id="main-title" class="text-xl md:text-3xl font-bold text-white mb-2 text-center">英文遊戲樂園 - 玩家: ${playerName}</h2>
+                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">⚙️ 單字/設定管理後台 (Local Storage Admin Panel)</h2>
                     <p class="text-center text-sm text-pink-100">💡 這裡的詞彙僅儲存在您當前的瀏覽器中。</p>
                 </section>
                 
