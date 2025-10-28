@@ -1617,6 +1617,7 @@
 
         function renderWordAdmin() {
             const container = document.getElementById('game-content');
+            if (!container) return; // FIX: Added defensive check
             if (currentGame !== 'admin') return;
 
             const tab = getCurrentAdminTab();
