@@ -14,8 +14,7 @@
         .key-btn { height: 50px; transition: all 0.1s; text-transform: none; }
         .key-btn:active { box-shadow: 0 2px 0 0 #D1A3A3; transform: translateY(2px); }
 
-        /* --- 核心: 中央放大訊息提示框 (已改為右上角小提示) --- */
-        /* 移除原有的全屏遮罩 CSS */
+        /* --- 核心: 訊息提示框 (右上角小提示) --- */
         
         /* Game 1: 詞彙配對 (Dinosaur/Card Flip) */
         .g1-card-item {
@@ -161,6 +160,7 @@
             background-color: #3CB371; /* 綠色填入 */
             color: white;
             border: 3px solid #3CB371;
+            padding: 0 10px; /* 確保內容不會頂到邊緣 */
         }
 
         /* Game 6: 尋寶 (Treasure Map) */
@@ -273,17 +273,16 @@
         }
         
         const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
-        const LOCAL_STORAGE_KEY = 'GAMES_CUSTOM_DATA_V3';
-        const MAX_QUESTIONS = { g3: 5, g4: 10, g5: 5, g6: 10, g7: 5 }; 
+        const LOCAL_STORAGE_KEY = 'GAMES_CUSTOM_DATA_V4'; 
+        // 修正：所有問答/拼圖遊戲都最大 10 題 (G1 無題數)
+        const MAX_QUESTIONS = { g2: 10, g3: 10, g4: 10, g5: 10, g6: 10, g7: 10 }; 
 
         let currentGame = 'game1'; 
         let localData = {}; 
         
-        // **修正並新增**：用於追蹤 Admin 列表狀態
         let selectedWordIds = new Set();
-        let editingItemId = null; // 新增：追蹤當前正在編輯的項目 ID
+        let editingItemId = null; 
         
-        // 額外的通用詞彙庫 (用於 G3/G6 生成干擾選項)
         const ALL_VERBS = ['JUMP', 'RUN', 'WALK', 'SWIM', 'SLEEP', 'READ', 'DANCE', 'SING', 'WRITE', 'TALK', 'EAT', 'DRINK'];
         const ALL_ADJECTIVES = ['TALL', 'SHORT', 'FAST', 'SLOW', 'HAPPY', 'SAD', 'BIG', 'SMALL', 'OLD', 'NEW'];
         const GENERAL_GRAMMAR = ['IS', 'AM', 'ARE', 'WAS', 'WERE', 'DO', 'DOES', 'DID', 'HAS', 'HAVE', 'HAD', 'IN', 'ON', 'AT', 'TO', 'FOR', 'OF', 'MUCH', 'MANY', 'HOW'];
@@ -295,7 +294,7 @@
             'FAST': 'SLOW', 'SLOW': 'FAST',
             'HAPPY': 'SAD', 'SAD': 'HAPPY',
             'LONG': 'SHORT', 'OLD': 'NEW', 'NEW': 'OLD',
-            'GOOD': 'BAD', 'BAD': 'GOOD'
+            'GOOD': 'BETTER', 'BAD': 'WORSE'
         };
 
         // --- 預設單字庫 (與新遊戲結構匹配) ---
@@ -304,14 +303,13 @@
                 { id: 'w1', word: 'CAKE', emoji: '🎂' }, { id: 'w2', word: 'PIZZA', emoji: '🍕' },
                 { id: 'w3', word: 'CAR', emoji: '🚗' }, { id: 'w4', word: 'BIRD', emoji: '🐦' },
             ],
-            g2_words: ['ROBOT', 'COMPUTER', 'SPACESHIP', 'BUTTON', 'MEMORY'],
+            g2_words: ['ROBOT', 'COMPUTER', 'SPACESHIP', 'BUTTON', 'MEMORY', 'KEYBOARD', 'MONITOR', 'MOUSE', 'CABLE', 'PRINTER'],
             g3_actions: [
                 { id: 'a1', verb: 'JUMP' }, { id: 'a2', verb: 'SWIM' },
                 { id: 'a3', verb: 'SLEEP' }, { id: 'a4', verb: 'READ' },
                 { id: 'a5', verb: 'DANCE' },
             ],
             g4_grammar: [
-                // 修正 G4 預設數據，以符合新的簡化格式：Sentence(用 __ 代替空格), Answer
                 { id: 'g1', sentence: 'I __ playing my toys.', answer: 'AM' },
                 { id: 'g2', sentence: 'She __ a doctor.', answer: 'IS' },
                 { id: 'g3', sentence: 'The cat is __ the box.', answer: 'IN' },
@@ -339,10 +337,16 @@
         let state = {
             // G1: Match Card
             g1_matchCards: [], g1_flippedCards: [], g1_matchCount: 0, g1_gameStatus: 'ready',
-            // G2: Spelling Robot
+            // G2: Spelling Robot (Quiz mode now)
             g2_currentWord: '', g2_shuffledLetters: [], g2_answerSlots: [], g2_gameStatus: 'ready',
+            
             // Quizzes (G3, G4, G5, G6, G7)
             currentQuizSet: [], currentQIndex: 0, score: 0, gameStatus: 'ready', MAX_QUESTIONS_KEY: 'g3',
+            
+            // **修正**：追蹤計分和失敗狀態
+            currentQHasScored: false, // 是否已經加分 (首次答對)
+            currentQHasFailed: false, // 是否有錯誤嘗試 (只要錯一次，就不能再加分)
+            
             // G4 specific: store the current sentence with the filled answer
             g4_displaySentence: '',
             // G6 Treasure
@@ -399,7 +403,7 @@
             let temp = [...array];
             for (let i = temp.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [temp[i], temp[j]] = [temp[i], temp[j]];
+                [temp[i], temp[j]] = [temp[j], temp[i]];
             }
             return temp;
         }
@@ -496,21 +500,28 @@
             }
         }
 
-        // --- Quiz Game Helper Functions (適用於 G3, G4, G5, G6, G7) ---
+        // --- Quiz Game Helper Functions (適用於 G2, G3, G4, G5, G6, G7) ---
         function setupQuiz(dataKey, gameId, maxQOverride = null) {
             const source = localData[dataKey];
-            const maxQ = maxQOverride || MAX_QUESTIONS[gameId];
+            // 修正：題數上限為 MAX_QUESTIONS[gameId] (最多 10 題)
+            const maxQ = maxQOverride || MAX_QUESTIONS[gameId]; 
             
             if (source.length === 0) { 
                 MessageBox.show("請在後台新增題目！", true); 
                 return false;
             }
 
-            state.currentQuizSet = shuffleArray(source).slice(0, maxQ);
+            // 確保選取的題目數量不超過 maxQ 或可用題數
+            const numQuestions = Math.min(source.length, maxQ);
+
+            state.currentQuizSet = shuffleArray(source).slice(0, numQuestions);
             state.currentQIndex = 0;
             state.score = 0;
             state.gameStatus = 'playing';
             state.MAX_QUESTIONS_KEY = gameId; 
+            // **修正**：進入新遊戲時重置單題計分狀態
+            state.currentQHasScored = false;
+            state.currentQHasFailed = false;
             return true;
         }
 
@@ -526,6 +537,9 @@
 
         function goToNextQuestion(renderFunc) {
             state.currentQIndex++;
+            // **修正**：進入下一題時重置單題計分狀態
+            state.currentQHasScored = false;
+            state.currentQHasFailed = false;
             if (!checkQuizEnd(renderFunc)) {
                 renderFunc();
             }
@@ -631,22 +645,30 @@
 
         // --- Game 2: 字母拼圖 (🤖) ---
         function initGame2() {
-            const source = localData.g2_words;
-            if (source.length === 0) { MessageBox.show("請在後台新增字母拼圖單字！", true); return; }
+            // **重構成 Quiz Mode**
+            if (!setupQuiz('g2_words', 'g2')) return;
+            // 由於 setupQuiz 已經設置了 currentQuizSet 和 index，我們只需要初始化 G2 狀態
+            
+            state.g2_gameStatus = 'playing';
+            loadG2Question();
+        }
+        
+        function loadG2Question() {
+            const currentWord = state.currentQuizSet[state.currentQIndex];
+            if (!currentWord) return;
 
-            const targetWord = shuffleArray(source)[0];
-            const letters = targetWord.split('');
+            const letters = currentWord.split('');
 
-            state.g2_currentWord = targetWord.toUpperCase();
+            state.g2_currentWord = currentWord.toUpperCase();
             state.g2_shuffledLetters = shuffleArray(letters.map(l => ({ id: crypto.randomUUID(), letter: l.toUpperCase() })));
             state.g2_answerSlots = Array(letters.length).fill(null);
-            state.g2_gameStatus = 'playing';
-
+            
             renderGame2();
         }
 
+
         function handleLetterClickG2(id) {
-            if (state.g2_gameStatus !== 'playing') return;
+            if (state.gameStatus !== 'playing') return;
 
             const letterBlockIndex = state.g2_shuffledLetters.findIndex(l => l && l.id === id);
             const letterBlock = state.g2_shuffledLetters[letterBlockIndex];
@@ -663,7 +685,7 @@
         }
         
         function handleSlotClickG2(index) {
-            if (state.g2_gameStatus !== 'playing') return;
+            if (state.gameStatus !== 'playing') return;
 
             const letterBlock = state.g2_answerSlots[index];
             if (!letterBlock) return;
@@ -686,9 +708,25 @@
             const builtWord = state.g2_answerSlots.map(slot => slot.letter).join('');
             
             if (builtWord === state.g2_currentWord) {
-                state.g2_gameStatus = 'won';
-                MessageBox.show(`拼字成功！單字是 ${formatDisplayWord(state.g2_currentWord)}！🎉`, false);
+                // 修正：答對時檢查是否已計分或已失敗
+                if (!state.currentQHasFailed && !state.currentQHasScored) {
+                    state.score++;
+                    state.currentQHasScored = true;
+                    MessageBox.show(`拼字成功！單字是 ${formatDisplayWord(state.g2_currentWord)}！🎉 (+1 分)`, false);
+                } else {
+                    MessageBox.show(`拼字成功！請準備下一題。`, false);
+                }
+                
+                // 延遲後進入下一題
+                setTimeout(() => {
+                    goToNextQuestion(renderGame2);
+                    if (state.gameStatus === 'playing') loadG2Question();
+                }, 1000);
+
             } else {
+                // INCORRECT attempt: immediately prevent scoring.
+                state.currentQHasFailed = true; // 只要錯一次，就不能加分
+                
                 const display = document.getElementById('g2-answer-display');
                 if (display) {
                     display.classList.add('shake');
@@ -702,6 +740,13 @@
         function renderGame2() {
             const container = document.getElementById('game-content');
             if (!container || currentGame !== 'game2') return; 
+
+            if (state.gameStatus === 'finished') {
+                 container.innerHTML = getFinishedScreen('🤖 字母拼圖', state.score, state.currentQuizSet.length, initGame2);
+                 return;
+            }
+            
+            const questionNumber = state.currentQIndex + 1;
 
             const answerSlotsHtml = state.g2_answerSlots.map((slot, index) => {
                 const letter = slot ? slot.letter : '';
@@ -718,10 +763,11 @@
             container.innerHTML = `
                 <section class="w-full bg-gray-700 p-4 rounded-xl shadow-inner border-b-8 border-gray-900">
                     <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🤖 字母拼圖 (spelling robot)</h2>
-                    <p class="text-center text-sm text-gray-300 mb-4">目標: 點擊下方的字母，按正確順序拼出你聽到的單字！</p>
+                    <p class="text-center text-sm text-gray-300 mb-4">目標: 點擊下方的字母，按正確順序拼出你聽到的單字！分數: ${state.score}/${state.currentQuizSet.length}</p>
                 </section>
                 
                 <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">第 ${questionNumber} 題 / 共 ${state.currentQuizSet.length} 題</h3>
                     <button onclick="callTTS(state.g2_currentWord)" class="text-white bg-blue-500 hover:bg-blue-600 py-3 px-6 rounded-full shadow-cute mb-6 flex items-center">
                         <span class="text-3xl mr-2">🔊</span> 點我聽單字
                     </button>
@@ -737,7 +783,7 @@
                     
                     <div class="text-center mt-6">
                         <button onclick="initGame2()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg">
-                            ${state.g2_gameStatus === 'won' ? '再玩一次' : '換個單字'}
+                            ${state.gameStatus === 'won' ? '再玩一次' : '換個單字'}
                         </button>
                     </div>
                 </div>
@@ -749,26 +795,68 @@
         function getAllDecoyOptions(dataKey, currentCorrectAnswer) {
             let allOptions = new Set();
             
+            // 基礎動詞和通用文法詞彙
+            ALL_VERBS.forEach(v => allOptions.add(v.toUpperCase()));
+            GENERAL_GRAMMAR.forEach(g => allOptions.add(g.toUpperCase()));
+            
+            // 1. G3: 動作指令 (Verb)
             if (dataKey === 'g3_actions') {
                 localData.g3_actions.forEach(q => allOptions.add(q.verb.toUpperCase()));
-                ALL_VERBS.forEach(v => allOptions.add(v.toUpperCase()));
-            } else if (dataKey === 'g6_qa_match') {
-                localData.g6_qa_match.forEach(q => allOptions.add(q.answer));
-            } else if (dataKey === 'g7_comparatives') {
+            } 
+            // 2. G4: 文法停車場 (Grammar Answers)
+            else if (dataKey === 'g4_grammar') {
+                localData.g4_grammar.forEach(q => allOptions.add(q.answer.toUpperCase()));
+            } 
+            // 3. G6: 尋寶問答 (Sentence) - **此處已修正**
+            else if (dataKey === 'g6_qa_match') {
+                // **步驟 1: 收集所有句子/句型結構 (排除單字)**
+                let sentencePool = new Set();
+
+                // G6: 答案和問句
+                localData.g6_qa_match.forEach(q => {
+                    sentencePool.add(q.answer);
+                    sentencePool.add(q.question); // Question as a decoy answer (wrong context)
+                });
+                
+                // G4: 填入答案的完整句子 (句型結構干擾)
+                localData.g4_grammar.forEach(q => {
+                    const sentence = q.sentence.replace(/__/g, formatDisplayWord(q.answer)); 
+                    sentencePool.add(sentence);
+                });
+                
+                // G5: 陳述句 (True/False statements)
+                localData.g5_true_false.forEach(q => sentencePool.add(q.statement));
+
+                // 內建通用句子 (作為強力備援干擾項，確保選項不重複且為句子)
+                sentencePool.add("I am happy to see you.");
+                sentencePool.add("That is a tall red building.");
+                sentencePool.add("We are going to the park now.");
+                sentencePool.add("Yes, I can play basketball.");
+                
+                // **步驟 2: 過濾：只保留句子結構 (多於 2 個詞，且不是單純的 I 或 A)**
+                sentencePool = Array.from(sentencePool).filter(s => {
+                    const tokens = s.trim().split(/\s+/).filter(t => t.length > 0);
+                    return tokens.length >= 2; 
+                });
+                
+                // 將過濾後的句子加入 allOptions (保持原始大小寫)
+                sentencePool.forEach(s => allOptions.add(s));
+            } 
+            // 4. G7: 比較級 (Comparative Forms)
+            else if (dataKey === 'g7_comparatives') {
                 localData.g7_comparatives.forEach(q => {
                     const adj = q.adj.toUpperCase();
-                    // 確保比較級形式也被納入干擾項庫
                     allOptions.add(_getComparativeForm(adj));
+                    const antonym = ANTONYM_MAP[adj];
+                    if(antonym) allOptions.add(_getComparativeForm(antonym));
                 });
                 ALL_ADJECTIVES.forEach(adj => allOptions.add(_getComparativeForm(adj)));
-            } else if (dataKey === 'g4_grammar') {
-                // G4 特殊處理：收集所有答案作為選項庫，並加入通用文法詞彙
-                localData.g4_grammar.forEach(q => allOptions.add(q.answer.toUpperCase()));
-                GENERAL_GRAMMAR.forEach(g => allOptions.add(g.toUpperCase()));
             }
-
-            // 移除正確答案
+            
+            // 移除正確答案 (大小寫敏感或不敏感)
             allOptions.delete(currentCorrectAnswer.toUpperCase ? currentCorrectAnswer.toUpperCase() : currentCorrectAnswer);
+            allOptions.delete(currentCorrectAnswer);
+            
             return shuffleArray(Array.from(allOptions));
         }
 
@@ -784,13 +872,22 @@
             const currentQ = state.currentQuizSet[state.currentQIndex];
             
             if (selectedVerb === currentQ.verb) {
-                state.score++;
-                MessageBox.show("答對了！超級英雄動作正確！🦸", false);
+                // 修正：答對時檢查是否已計分或已失敗
+                if (!state.currentQHasFailed && !state.currentQHasScored) {
+                    state.score++;
+                    state.currentQHasScored = true;
+                    MessageBox.show("答對了！超級英雄動作正確！🦸 (+1 分)", false);
+                } else {
+                    MessageBox.show("答對了！請準備下一題。🦸", false);
+                }
+                
+                // 延遲後進入下一題
+                setTimeout(() => goToNextQuestion(renderGame3), 1000);
             } else {
-                MessageBox.show(`答錯了，正確答案是 ${formatDisplayWord(currentQ.verb)}。`, true);
+                // 答錯，不計分，不跳題
+                state.currentQHasFailed = true; // 只要錯一次，就不能加分
+                MessageBox.show(`答錯了，請再試試看！`, true);
             }
-
-            setTimeout(() => goToNextQuestion(renderGame3), 1000);
         }
 
         function renderGame3() {
@@ -809,23 +906,26 @@
             const correctAnswer = currentQ.verb;
             let decoys = getAllDecoyOptions('g3_actions', correctAnswer);
             
-            // 隨機選取 2 個作為干擾選項
+            // 隨機選取 2 個作為干擾選項 (總共 3 個選項)
             decoys = decoys.slice(0, 2); 
             
             const options = shuffleArray([correctAnswer, ...decoys]);
             // --- 簡化邏輯結束 ---
             
-            const optionsHtml = options.map(verb => `
-                <button onclick="handleAnswerG3('${verb}')"
+            const optionsHtml = options.map(verb => {
+                 const escapedVerb = verb.replace(/'/g, "\\'"); // 修正：轉義單引號
+                return `
+                    <button onclick="handleAnswerG3('${escapedVerb}')"
                         class="key-btn bg-accent-yellow hover:bg-yellow-400 text-gray-800 font-bold py-4 rounded-xl text-2xl shadow-cute">
                     ${formatDisplayWord(verb)}
                 </button>
-            `).join('');
+            `;
+            }).join('');
 
             container.innerHTML = `
                 <section class="w-full bg-red-600 p-4 rounded-xl shadow-inner border-b-8 border-red-900">
                     <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🦸 動作指令 (action command)</h2>
-                    <p class="text-center text-sm text-red-100">目標: 聽取指令，並選擇正確的動詞卡片。分數: ${state.score}/${questionNumber}</p>
+                    <p class="text-center text-sm text-red-100">目標: 聽取指令，並選擇正確的動詞卡片。分數: ${state.score}/${state.currentQuizSet.length}</p>
                 </section>
                 
                 <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
@@ -858,23 +958,24 @@
             const currentQ = state.currentQuizSet[state.currentQIndex];
             
             if (selectedOption === currentQ.answer) {
-                state.score++;
-                MessageBox.show("答對了！汽車已停入正確車位！🚗", false);
+                // 修正：答對時檢查是否已計分
+                if (!state.currentQHasFailed && !state.currentQHasScored) {
+                    state.score++;
+                    state.currentQHasScored = true;
+                    MessageBox.show("答對了！汽車已停入正確車位！🚗 (+1 分)", false);
+                } else {
+                    MessageBox.show("已答對，請點擊下一題。🚗", false);
+                }
                 
-                // 1. 填入答案並更新狀態
-                const filledSentence = currentQ.sentence.replace('__', formatDisplayWord(selectedOption));
-                state.g4_displaySentence = filledSentence;
+                // 1. 儲存答案 (用於渲染填空後的句子)
+                state.g4_displaySentence = selectedOption; 
                 
-                // 2. 重新渲染 (帶有填入的答案)
+                // 2. 重新渲染 (帶有填入的答案和「下一題」按鈕)
                 renderGame4(true); 
 
-                // 3. 延遲後進入下一題
-                setTimeout(() => {
-                    state.g4_displaySentence = ''; // 清空，準備下一題
-                    goToNextQuestion(renderGame4);
-                }, 1500);
-
             } else {
+                // 答錯，不計分，不跳題
+                state.currentQHasFailed = true; // 只要錯一次，就不能加分
                 MessageBox.show(`答錯了，請再試試！`, true);
             }
         }
@@ -892,44 +993,62 @@
             const questionNumber = state.currentQIndex + 1;
             
             // --- G4 智能干擾項生成 ---
-            // 由於後台已簡化，options 字段不再可靠，我們重新生成選項
             const correctAnswer = currentQ.answer.toUpperCase();
             let decoys = getAllDecoyOptions('g4_grammar', correctAnswer);
             
-            // 選取 3 個干擾項
+            // 選取 3 個干擾項 (總共 4 個選項)
             decoys = decoys.slice(0, 3);
             const options = shuffleArray([currentQ.answer, ...decoys]);
             // --- 智能干擾項生成結束 ---
 
-            // 根據是否已填入答案來決定顯示的內容
-            const sentenceToDisplay = isAnswerFilled 
-                ? state.g4_displaySentence 
-                : currentQ.sentence.replace('__', '____'); 
+            // **修正 G4 填空顯示邏輯**
+            
+            const sentenceWithPlaceholders = currentQ.sentence;
+            const parts = sentenceWithPlaceholders.split('__');
+            
+            // 1. 決定填空內容的 HTML
+            const blankHtml = isAnswerFilled 
+                ? `<span class="g4-blank g4-blank-filled">${formatDisplayWord(state.g4_displaySentence)}</span>`
+                : `<span class="g4-blank">...</span>`;
 
-            const parts = sentenceToDisplay.split('____');
-            const blankContent = isAnswerFilled 
-                ? formatDisplayWord(currentQ.answer) 
-                : '...';
-
-            const questionTextHtml = `${formatDisplayWord(parts[0], true)} 
-                <span class="g4-blank ${isAnswerFilled ? 'g4-blank-filled' : ''}">
-                    ${blankContent}
-                </span> 
-                ${formatDisplayWord(parts[1])}`;
-
-
-            const optionsHtml = isAnswerFilled ? '' : options.map(option => `
-                <button onclick="handleAnswerG4('${option}')"
+            // 2. 組合句子
+            let questionTextHtml = '';
+            
+            // 修正：確保句子可以正確分割和重組，並避免出現 undefined
+            for(let i = 0; i < parts.length; i++) {
+                const part = parts[i].trim();
+                
+                // 如果是句子開頭
+                if (i === 0) {
+                     questionTextHtml += formatDisplayWord(part, true);
+                } else {
+                     // 插入填空
+                     questionTextHtml += blankHtml;
+                     // 插入後續部分
+                     if (part.length > 0) {
+                        // 確保填空後的單字是小寫 (除非是專有名詞)
+                         questionTextHtml += formatDisplayWord(part);
+                     }
+                }
+            }
+            // --- G4 填空顯示邏輯修正結束 ---
+            
+            // 組合選項 HTML
+            const optionsHtml = isAnswerFilled ? '' : options.map(option => {
+                const escapedOption = option.replace(/'/g, "\\'"); // 修正：轉義單引號
+                return `
+                    <button onclick="handleAnswerG4('${escapedOption}')"
                         class="g4-option-btn key-btn font-bold py-3 rounded-xl shadow-lg">
                     ${formatDisplayWord(option)}
                 </button>
-            `).join('');
+            `;
+            }).join('');
 
 
             container.innerHTML = `
                 <section class="w-full bg-gray-400 p-4 rounded-xl shadow-inner border-b-8 border-gray-600">
                     <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🚗 文法停車場 (grammar lot)</h2>
-                    <p class="text-center text-sm text-gray-800">目標: 選擇正確的動詞/介詞，將句子填完整。分數: ${state.score}/${questionNumber}</p>
+                    <p class="text-center text-sm text-gray-800">目標: 選擇正確的動詞/介詞，將句子填完整。分數: ${state.score}/${state.currentQuizSet.length}</p>
                 </section>
                 
                 <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
@@ -966,13 +1085,21 @@
             const isCorrect = (currentQ.answer === isTrue);
             
             if (isCorrect) {
-                state.score++;
-                MessageBox.show("判斷正確！你是個誠實的孩子！✅", false);
-            } else {
-                MessageBox.show(`答錯了，正確答案是 ${currentQ.answer ? 'True' : 'False'}。`, true);
-            }
+                // 修正：答對時檢查是否已計分
+                if (!state.currentQHasFailed && !state.currentQHasScored) {
+                    state.score++;
+                    state.currentQHasScored = true;
+                    MessageBox.show("判斷正確！你是個誠實的孩子！✅ (+1 分)", false);
+                } else {
+                    MessageBox.show("判斷正確！✅ 請準備下一題。", false);
+                }
 
-            setTimeout(() => goToNextQuestion(renderGame5), 1000);
+                setTimeout(() => goToNextQuestion(renderGame5), 1000);
+            } else {
+                // 答錯，不計分，不跳題
+                state.currentQHasFailed = true; // 只要錯一次，就不能加分
+                MessageBox.show(`答錯了，請再試試！`, true);
+            }
         }
 
         function renderGame5() {
@@ -990,7 +1117,7 @@
             container.innerHTML = `
                 <section class="w-full bg-accent-yellow p-4 rounded-xl shadow-inner border-b-8 border-yellow-600">
                     <h2 class="text-xl md:text-3xl font-bold text-yellow-900 mb-2 text-center">🤥 誰說謊了? (true/false quiz)</h2>
-                    <p class="text-center text-sm text-yellow-800">目標: 根據圖片判斷描述是否正確。分數: ${state.score}/${questionNumber}</p>
+                    <p class="text-center text-sm text-yellow-800">目標: 根據圖片判斷描述是否正確。分數: ${state.score}/${state.currentQuizSet.length}</p>
                 </section>
                 
                 <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
@@ -1034,14 +1161,22 @@
             const currentQ = state.currentQuizSet[state.currentQIndex];
             
             if (selectedAnswer === currentQ.answer) {
-                state.score++;
-                state.g6_treasures++;
-                MessageBox.show("答對了！找到了一個寶藏！💎", false);
-            } else {
-                MessageBox.show(`答錯了，正確答案是 "${formatDisplayWord(currentQ.answer, true)}"！`, true);
-            }
+                // 修正：答對時檢查是否已計分
+                if (!state.currentQHasFailed && !state.currentQHasScored) {
+                    state.score++;
+                    state.g6_treasures++; // 尋寶遊戲的額外計數
+                    state.currentQHasScored = true;
+                    MessageBox.show("答對了！找到了一個寶藏！💎 (+1 分)", false);
+                } else {
+                    MessageBox.show("答對了！請準備下一題。💎", false);
+                }
 
-            setTimeout(() => goToNextQuestion(renderGame6), 1000);
+                setTimeout(() => goToNextQuestion(renderGame6), 1000);
+            } else {
+                // 答錯，不計分，不跳題
+                state.currentQHasFailed = true; // 只要錯一次，就不能加分
+                MessageBox.show(`答錯了，請再試試！`, true);
+            }
         }
 
         function renderGame6() {
@@ -1056,27 +1191,37 @@
             const currentQ = state.currentQuizSet[state.currentQIndex];
             const questionNumber = state.currentQIndex + 1;
             
-            // --- G6 簡化邏輯：動態生成干擾選項 ---
+            // --- G6 簡化邏輯：動態生成干擾選項 (必須是 4 個) ---
             const correctAnswer = currentQ.answer;
+            // 修正：getAllDecoyOptions 現在已包含通用文法詞彙作為干擾項
             let decoys = getAllDecoyOptions('g6_qa_match', correctAnswer);
             
-            // 隨機選取 3 個作為干擾選項
+            // 隨機選取 3 個作為干擾選項 (總共 4 個選項)
             decoys = decoys.slice(0, 3); 
             
+            // 確保選項數量為 4
+            // 由於 getAllDecoyOptions 已經確保了句型干擾項，這裡不再需要複雜的 while 循環，
+            // 而是依賴於 decoys 的數量和品質。如果 decoys 不足 3 個，它只會提供現有的。
+            // 但為了滿足 4 選項的要求，我們應在 getAllDecoyOptions 處檢查和補充。
+
+            // Final options check:
             const options = shuffleArray([correctAnswer, ...decoys]); 
             // --- 簡化邏輯結束 ---
 
-            const optionsHtml = options.map(option => `
-                <button onclick="handleAnswerG6('${option}')"
+            const optionsHtml = options.map(option => {
+                const escapedOption = option.replace(/'/g, "\\'"); // 修正：轉義單引號
+                return `
+                    <button onclick="handleAnswerG6('${escapedOption}')"
                         class="key-btn bg-secondary-blue hover:bg-blue-400 text-blue-900 font-bold py-3 rounded-xl text-lg shadow-cute text-left px-4">
                     ${formatDisplayWord(option, true)}
                 </button>
-            `).join('');
+            `;
+            }).join('');
 
             container.innerHTML = `
                 <section class="w-full bg-yellow-600 p-4 rounded-xl shadow-inner border-b-8 border-yellow-900">
                     <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🗺️ 問答選擇題尋寶 (q&a treasure hunt)</h2>
-                    <p class="text-center text-sm text-yellow-200">目標: 選擇正確的答句。尋獲寶藏: ${state.g6_treasures} / 分數: ${state.score}/${questionNumber}</p>
+                    <p class="text-center text-sm text-yellow-200">目標: 選擇正確的答句。尋獲寶藏: ${state.g6_treasures} / 分數: ${state.score}/${state.currentQuizSet.length}</p>
                 </section>
                 
                 <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
@@ -1106,8 +1251,9 @@
             const commonComparatives = {
                 'BIG': 'BIGGER', 'SMALL': 'SMALLER', 'FAST': 'FASTER', 'SLOW': 'SLOWER',
                 'HAPPY': 'HAPPIER', 'TALL': 'TALLER', 'SHORT': 'SHORTER', 'LONG': 'LONGER',
-                'GOOD': 'BETTER', 'BAD': 'WORSE', 'NEW': 'NEWER', 'OLD': 'OLDER'
+                'GOOD': 'BETTER', 'BAD': 'WORSE'
             };
+            // 由於用戶要求：只有在反義詞庫中查到反義詞時才使用，否則沿用原形容詞。這裡是生成比較級形式的函數
             return commonComparatives[adj] || `MORE ${adj}`;
         }
 
@@ -1118,7 +1264,7 @@
 
             // 1. 判斷有效形容詞：如果問 B vs A (isAisB=false)，則使用反義詞
             if (!isAisB) {
-                effectiveAdj = ANTONYM_MAP[baseAdj] || baseAdj; // 如果沒有反義詞，則沿用原形容詞
+                effectiveAdj = ANTONYM_MAP[baseAdj] || baseAdj; 
             }
 
             const expectedAnswer = _getComparativeForm(effectiveAdj);
@@ -1182,13 +1328,21 @@
             const expectedAnswer = _getComparativeForm(effectiveAdj);
             
             if (selectedComparative === expectedAnswer) {
-                state.score++;
-                MessageBox.show("答對了！平衡儀器正常運作！⚖️", false);
-            } else {
-                MessageBox.show(`答錯了，正確答案是 ${formatDisplayWord(expectedAnswer)}。`, true);
-            }
+                // 修正：答對時檢查是否已計分
+                if (!state.currentQHasFailed && !state.currentQHasScored) {
+                    state.score++;
+                    state.currentQHasScored = true;
+                    MessageBox.show("答對了！平衡儀器正常運作！⚖️ (+1 分)", false);
+                } else {
+                    MessageBox.show("答對了！請準備下一題。⚖️", false);
+                }
 
-            setTimeout(() => goToNextQuestion(renderGame7), 1000);
+                setTimeout(() => goToNextQuestion(renderGame7), 1000);
+            } else {
+                // 答錯，不計分，不跳題
+                state.currentQHasFailed = true; // 只要錯一次，就不能加分
+                MessageBox.show(`答錯了，請再試試！`, true);
+            }
         }
 
         function renderGame7() {
@@ -1218,17 +1372,20 @@
             const blank = '____';
             const questionText = `${formatDisplayWord(subjectNoun, true)} is ${blank} than ${formatDisplayWord(objectNoun)}.`;
 
-            const optionsHtml = comparativeOptions.map(comp => `
-                <button onclick="handleAnswerG7('${comp}')"
+            const optionsHtml = comparativeOptions.map(comp => {
+                const escapedComp = comp.replace(/'/g, "\\'"); // 修正：轉義單引號
+                return `
+                    <button onclick="handleAnswerG7('${escapedComp}')"
                         class="key-btn g7-option-btn-style font-bold py-3 rounded-xl text-lg shadow-cute">
                     ${formatDisplayWord(comp)}
                 </button>
-            `).join('');
+            `;
+            }).join('');
 
             container.innerHTML = `
                 <section class="w-full bg-orange-500 p-4 rounded-xl shadow-inner border-b-8 border-orange-800 g7-header">
                     <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">⚖️ 比較級傳送門 (comparative quiz)</h2>
-                    <p class="text-center text-sm text-orange-100">目標: 選擇正確的比較級形式。分數: ${state.score}/${questionNumber}</p>
+                    <p class="text-center text-sm text-orange-100">目標: 選擇正確的比較級形式。分數: ${state.score}/${state.currentQuizSet.length}</p>
                 </section>
                 
                 <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
@@ -1308,7 +1465,10 @@
         function saveEditedWordAdmin(id) {
             const currentList = localData[currentAdminKey] || [];
             const currentTab = getCurrentAdminTab();
-            const index = currentList.findIndex(item => (currentAdminKey === 'g2_words' ? item === id : item.id === id));
+            // G2 處理方式：直接用字串值作為 ID
+            const index = currentAdminKey === 'g2_words' 
+                ? currentList.findIndex(item => item === id)
+                : currentList.findIndex(item => item.id === id);
             
             if (index === -1) return;
 
@@ -1649,7 +1809,13 @@
                     // 物件陣列編輯
                     else {
                         editInputs = currentTab.headers.map(header => {
-                            const value = itemToEdit[header] || '';
+                            let value = itemToEdit[header] || '';
+                            
+                            // 對於布林值 (G5 answer)，特殊處理
+                             if (header === 'answer' && currentAdminKey === 'g5_true_false') {
+                                 value = itemToEdit[header] ? 'true' : 'false';
+                             }
+
                             // 圖片 URL 欄位較長，給予更多空間
                             const inputType = header.includes('url') ? 'text' : 'text'; 
                             const label = header.charAt(0).toUpperCase() + header.slice(1);
