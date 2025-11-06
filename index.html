@@ -16,7 +16,7 @@
 
         /* --- 核心: 訊息提示框 (右上角小提示) --- */
         
-        /* Game 1: 詞彙配對 (Dinosaur/Card Flip) */
+        /* Game 1: 詞彙對對碰 (Dinosaur/Card Flip) */
         .g1-card-item {
             transition: transform 0.6s;
             transform-style: preserve-3d;
@@ -60,7 +60,7 @@
             cursor: default;
         }
 
-        /* Game 2: 字母拼圖 (Robot) */
+        /* Game 2: 拼讀機器人 (Robot) */
         .g2-letter-block {
             transition: all 0.15s;
             box-shadow: 0 3px 0 0 #4B5563; /* 機器人深灰 */
@@ -235,8 +235,8 @@
     <!-- 導航列 -->
     <nav class="w-full max-w-6xl mb-6">
         <div class="grid grid-cols-4 gap-2 md:gap-4 justify-center" id="game-nav">
-            <button data-game="game1" class="tab-btn">🦖 詞彙配對</button>
-            <button data-game="game2" class="tab-btn">🤖 字母拼圖</button>
+            <button data-game="game1" class="tab-btn">🦖 詞彙對對碰</button>
+            <button data-game="game2" class="tab-btn">🤖 拼讀機器人</button>
             <button data-game="game3" class="tab-btn">🦸 動作指令</button>
             <button data-game="game4" class="tab-btn">🚗 文法停車場</button>
             <button data-game="game5" class="tab-btn">🤥 誰說謊了?</button>
@@ -545,10 +545,10 @@
             }
         }
         
-        // --- Game 1: 詞彙配對 (🦖) ---
+        // --- Game 1: 詞彙對對碰 (🦖) ---
         function initGame1() {
             const source = localData.g1_words;
-            if (source.length === 0) { MessageBox.show("請在後台新增詞彙配對單字！", true); return; }
+            if (source.length === 0) { MessageBox.show("請在後台新增詞彙對對碰單字！", true); return; }
 
             const limitedSource = shuffleArray(source).slice(0, 4); 
             state.g1_matchCount = 0;
@@ -585,7 +585,7 @@
                     state.g1_flippedCards = [];
                     renderGame1();
                     if (state.g1_matchCount === state.g1_matchCards.length / 2) {
-                        setTimeout(() => MessageBox.show("太棒了！所有詞彙配對成功！🎉", false), 500);
+                        setTimeout(() => MessageBox.show("太棒了！對對碰成功！🎉", false), 500);
                         state.g1_gameStatus = 'won';
                     }
                 } else {
@@ -628,7 +628,7 @@
             
             container.innerHTML = `
                 <section class="w-full bg-secondary-blue p-4 rounded-xl shadow-inner border-b-8 border-blue-600">
-                    <h2 class="text-xl md:text-3xl font-bold text-blue-800 mb-4 text-center">🦖 詞彙配對 (word/emoji match)</h2>
+                    <h2 class="text-xl md:text-3xl font-bold text-blue-800 mb-4 text-center">🦖 詞彙對對碰 (word/emoji match)</h2>
                     <p class="text-center text-sm mb-4">目標: 配對單字和對應的 Emoji。已完成 ${state.g1_matchCount}/${state.g1_matchCards.length / 2} 組。</p>
                     <div class="grid grid-cols-4 gap-3 md:gap-4 max-w-2xl mx-auto">
                         ${cardsHtml}
@@ -643,7 +643,7 @@
         }
         // --- Game 1 End ---
 
-        // --- Game 2: 字母拼圖 (🤖) ---
+        // --- Game 2: 拼讀機器人 (🤖) ---
         function initGame2() {
             // **重構成 Quiz Mode**
             if (!setupQuiz('g2_words', 'g2')) return;
@@ -742,7 +742,7 @@
             if (!container || currentGame !== 'game2') return; 
 
             if (state.gameStatus === 'finished') {
-                 container.innerHTML = getFinishedScreen('🤖 字母拼圖', state.score, state.currentQuizSet.length, initGame2);
+                 container.innerHTML = getFinishedScreen('🤖 拼讀機器人', state.score, state.currentQuizSet.length, initGame2);
                  return;
             }
             
@@ -762,7 +762,7 @@
 
             container.innerHTML = `
                 <section class="w-full bg-gray-700 p-4 rounded-xl shadow-inner border-b-8 border-gray-900">
-                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🤖 字母拼圖 (spelling robot)</h2>
+                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🤖 拼讀機器人 (spelling robot)</h2>
                     <p class="text-center text-sm text-gray-300 mb-4">目標: 點擊下方的字母，按正確順序拼出你聽到的單字！分數: ${state.score}/${state.currentQuizSet.length}</p>
                 </section>
                 
@@ -1116,7 +1116,7 @@
 
             container.innerHTML = `
                 <section class="w-full bg-accent-yellow p-4 rounded-xl shadow-inner border-b-8 border-yellow-600">
-                    <h2 class="text-xl md:text-3xl font-bold text-yellow-900 mb-2 text-center">🤥 誰說謊了? (true/false quiz)</h2>
+                    <h2 class="text-xl md:text-3xl font-bold text-yellow-900 mb-2 text-center">🤥 誰說謊了? (True/False quiz)</h2>
                     <p class="text-center text-sm text-yellow-800">目標: 根據圖片判斷描述是否正確。分數: ${state.score}/${state.currentQuizSet.length}</p>
                 </section>
                 
@@ -1220,7 +1220,7 @@
 
             container.innerHTML = `
                 <section class="w-full bg-yellow-600 p-4 rounded-xl shadow-inner border-b-8 border-yellow-900">
-                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🗺️ 問答選擇題尋寶 (q&a treasure hunt)</h2>
+                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🗺️ 問答選擇題尋寶 (Q&A treasure hunt)</h2>
                     <p class="text-center text-sm text-yellow-200">目標: 選擇正確的答句。尋獲寶藏: ${state.g6_treasures} / 分數: ${state.score}/${state.currentQuizSet.length}</p>
                 </section>
                 
@@ -1433,8 +1433,8 @@
 
         // --- Admin Panel Functions ---
         const ADMIN_TABS = [
-            { key: 'g1_words', name: '🦖 詞彙配對', headers: ['word', 'emoji'] },
-            { key: 'g2_words', name: '🤖 字母拼圖', headers: ['Word'] },
+            { key: 'g1_words', name: '🦖 詞彙對對碰', headers: ['word', 'emoji'] },
+            { key: 'g2_words', name: '🤖 拼讀機器人', headers: ['Word'] },
             { key: 'g3_actions', name: '🦸 動作指令', headers: ['verb'] }, 
             { key: 'g4_grammar', name: '🚗 文法停車場', headers: ['sentence', 'answer'] },
             { key: 'g5_true_false', name: '🤥 誰說謊了?', headers: ['statement', 'imageUrl', 'answer'] },
