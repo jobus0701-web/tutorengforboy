@@ -284,7 +284,8 @@
         let editingItemId = null; 
         
         const ALL_VERBS = ['JUMP', 'RUN', 'WALK', 'SWIM', 'SLEEP', 'READ', 'DANCE', 'SING', 'WRITE', 'TALK', 'EAT', 'DRINK'];
-        const ALL_ADJECTIVES = ['TALL', 'SHORT', 'FAST', 'SLOW', 'HAPPY', 'SAD', 'BIG', 'SMALL', 'OLD', 'NEW'];
+        // **修正：擴充形容詞列表，以包含更多單音節詞和多音節詞進行智能測試**
+        const ALL_ADJECTIVES = ['TALL', 'SHORT', 'FAST', 'SLOW', 'HAPPY', 'SAD', 'BIG', 'SMALL', 'OLD', 'NEW', 'BRIGHT', 'CLEAN', 'BEAUTIFUL', 'EXPENSIVE']; 
         const GENERAL_GRAMMAR = ['IS', 'AM', 'ARE', 'WAS', 'WERE', 'DO', 'DOES', 'DID', 'HAS', 'HAVE', 'HAD', 'IN', 'ON', 'AT', 'TO', 'FOR', 'OF', 'MUCH', 'MANY', 'HOW'];
         
         // --- G7 輔助工具：反義詞映射表 (Antonym Map) ---
@@ -329,6 +330,7 @@
             g7_comparatives: [
                 { id: 'c1', nounA: 'Elephant', nounB: 'Mouse', adj: 'BIG', urlA: 'https://placehold.co/150x120/3CB371/FFFFFF?text=A', urlB: 'https://placehold.co/150x120/FFD700/000000?text=B' },
                 { id: 'c2', nounA: 'Pencil', nounB: 'Ruler', adj: 'LONG', urlA: 'https://placehold.co/150x120/87CEEB/FFFFFF?text=A', urlB: 'https://placehold.co/150x120/FA8072/FFFFFF?text=B' },
+                { id: 'c3', nounA: 'Rose', nounB: 'Daisy', adj: 'BEAUTIFUL', urlA: 'https://placehold.co/150x120/FF69B4/FFFFFF?text=A', urlB: 'https://placehold.co/150x120/F0E68C/000000?text=B' } // Added multi-syllable word
             ],
         };
 
@@ -1245,16 +1247,45 @@
 
         // --- Game 7: 比較級傳送門 (⚖️) ---
         
-        // 輔助函數：獲取比較級形式
+        // **修正：智能獲取比較級形式函數**
         function _getComparativeForm(baseAdj) {
             const adj = baseAdj.toUpperCase();
-            const commonComparatives = {
+            
+            // 1. 不規則和單音節/短詞特例 (高準確度列表)
+            const specialComparatives = {
+                // 不規則
+                'GOOD': 'BETTER', 'BAD': 'WORSE', 'MUCH': 'MORE', 'MANY': 'MORE', 
+                // 單音節/短詞 (包含雙寫規則，修正了 SMALL, FAST, SLOW 等錯誤的 MORE)
                 'BIG': 'BIGGER', 'SMALL': 'SMALLER', 'FAST': 'FASTER', 'SLOW': 'SLOWER',
-                'HAPPY': 'HAPPIER', 'TALL': 'TALLER', 'SHORT': 'SHORTER', 'LONG': 'LONGER',
-                'GOOD': 'BETTER', 'BAD': 'WORSE'
+                'HOT': 'HOTTER', 'THIN': 'THINNER', 'FAT': 'FATTER',
+                'TALL': 'TALLER', 'SHORT': 'SHORTER', 'LONG': 'LONGER', 'NEW': 'NEWER',
+                'OLD': 'OLDER', 'CLEAN': 'CLEANER', 'BRIGHT': 'BRIGHTER', 'DARK': 'DARKER',
+                'WIDE': 'WIDER', 'LARGE': 'LARGER', 'SAFE': 'SAFER',
+                // 結尾是 Y (Y->IER)
+                'HAPPY': 'HAPPIER', 'EASY': 'EASIER', 'PRETTY': 'PRETTIER', 'BUSY': 'BUSIER'
             };
-            // 由於用戶要求：只有在反義詞庫中查到反義詞時才使用，否則沿用原形容詞。這裡是生成比較級形式的函數
-            return commonComparatives[adj] || `MORE ${adj}`;
+
+            if (specialComparatives[adj]) {
+                return specialComparatives[adj];
+            }
+            
+            // 2. 多音節規則 (使用 MORE)
+            // 檢查已知長詞或常見多音節後綴 (例如 BEAUTIFUL, EXPENSIVE)
+            if (['BEAUTIFUL', 'EXPENSIVE', 'IMPORTANT', 'DANGEROUS'].includes(adj) || 
+                adj.length > 7 || 
+                ['FUL', 'IVE', 'OUS', 'ING', 'ANT', 'ENT'].some(suffix => adj.endsWith(suffix))) 
+            {
+                return `MORE ${adj}`;
+            }
+
+            // 3. 預設規則 (剩下的短詞安全地加 ER，這裏應該極少觸發)
+            // Ends in E: Add R
+            if (adj.endsWith('E')) {
+                return adj + 'R';
+            }
+
+            // Default: Add ER (For unlisted 1-2 syllable words, e.g., RARE -> RARER, COLD -> COLDER)
+            return adj + 'ER';
         }
 
         // 輔助函數：生成比較級選項和正確答案 (包含反義詞邏輯)
@@ -1280,6 +1311,11 @@
                 if(antonym) allDecoys.add(_getComparativeForm(antonym));
             });
             ALL_ADJECTIVES.forEach(adj => allDecoys.add(_getComparativeForm(adj)));
+            // 新增 MORE + 原級作為干擾項，以及錯誤的 -ER 形式
+            ALL_ADJECTIVES.forEach(adj => {
+                 allDecoys.add(`MORE ${adj}`);
+                 allDecoys.add(adj + 'ER'); // 錯誤的 -ER 形式，例如 MORE BEAUTIFUL 的錯誤干擾 BEAUTIFULLER
+            });
 
             // 移除正確答案
             allDecoys.delete(expectedAnswer);
