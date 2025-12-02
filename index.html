@@ -218,7 +218,7 @@
     <!-- 訊息提示框 (頂部右側 - 已修正為非中央放大) -->
     <div id="message-box" class="fixed top-4 right-4 z-50 opacity-0 transition-all duration-300 transform translate-y-[-20px] pointer-events-none max-w-sm">
         <div id="message-content-wrapper" class="p-3 rounded-lg shadow-xl">
-            <p id="message-content" class="text-sm font-semibold"></p>
+            <p id="message-content"></p>
         </div>
     </div>
 
@@ -316,6 +316,8 @@
                 { id: 'g3', sentence: 'The cat is __ the box.', answer: 'IN' },
                 { id: 'g4', sentence: 'They __ happy.', answer: 'ARE' },
                 { id: 'g5', sentence: 'He __ milk every day.', answer: 'DRINKS' },
+                // Added for testing capitalization fix (to be added by user in the backend if needed)
+                // { id: 'g6', sentence: '__ is your name?', answer: 'WHAT' }, 
             ],
             g5_true_false: [
                 { id: 't1', statement: 'This is a small dog.', imageUrl: 'https://placehold.co/150x120/8254A9/FFFFFF?text=BIG+DOG', answer: false },
@@ -410,18 +412,25 @@
             return temp;
         }
         
+        // **修正 formatDisplayWord 邏輯：處理句首大寫和專有名詞大小寫**
+        // 新邏輯：優先保留後台輸入的大小寫，僅在句首強制首字母大寫。
         function formatDisplayWord(word, isSentenceStart = false) {
             if (typeof word !== 'string') return word;
             
             let displayWord = word.replace(/_/g, ' ');
 
+            // 1. 檢查 'I' (永遠大寫)
             if (displayWord.length === 1 && displayWord.toUpperCase() === 'I') return 'I';
             
+            // 2. 規則 1: 處理句首大寫 (強制首字母大寫，其餘部分保留輸入的大小寫)
             if (isSentenceStart && displayWord.length > 0) {
-                 return displayWord.charAt(0).toUpperCase() + displayWord.slice(1).toLowerCase();
+                 const firstLetter = displayWord.charAt(0).toUpperCase();
+                 const restOfWord = displayWord.slice(1);
+                 return firstLetter + restOfWord; // Keeps input case for the rest of the word
             }
 
-            return displayWord.toLowerCase();
+            // 3. 預設：顯示為後台輸入的原樣 (大小寫完全保留)
+            return displayWord;
         }
 
         // --- LocalStorage 存儲功能 (統一管理所有遊戲數據) ---
@@ -822,7 +831,8 @@
                 
                 // G4: 填入答案的完整句子 (句型結構干擾)
                 localData.g4_grammar.forEach(q => {
-                    const sentence = q.sentence.replace(/__/g, formatDisplayWord(q.answer)); 
+                    // Use the raw sentence structure for decoy, not formatDisplayWord, to keep original case
+                    const sentence = q.sentence.replace(/__/g, q.answer); 
                     sentencePool.add(sentence);
                 });
                 
@@ -1003,6 +1013,10 @@
             const options = shuffleArray([currentQ.answer, ...decoys]);
             // --- 智能干擾項生成結束 ---
 
+            // **判斷填空是否在句首 (用於決定選項大小寫)**
+            // 檢查句子是否以 '空格+填空符' 開頭
+            const isAnswerSentenceStartG4 = currentQ.sentence.trim().toUpperCase().startsWith('__');
+            
             // **修正 G4 填空顯示邏輯**
             
             const sentenceWithPlaceholders = currentQ.sentence;
@@ -1020,16 +1034,17 @@
             for(let i = 0; i < parts.length; i++) {
                 const part = parts[i].trim();
                 
-                // 如果是句子開頭
+                // 如果是句子開頭 (i=0)
                 if (i === 0) {
+                     // 處理句首部分 (Part 0) - 應用句首大寫規則
                      questionTextHtml += formatDisplayWord(part, true);
                 } else {
                      // 插入填空
                      questionTextHtml += blankHtml;
-                     // 插入後續部分
+                     // 插入填空之後的部分 (Part i > 0)
                      if (part.length > 0) {
-                        // 確保填空後的單字是小寫 (除非是專有名詞)
-                         questionTextHtml += formatDisplayWord(part);
+                        // 應用普通單字大小寫規則 (保留後台輸入的大小寫)
+                         questionTextHtml += formatDisplayWord(part, false);
                      }
                 }
             }
@@ -1038,10 +1053,31 @@
             // 組合選項 HTML
             const optionsHtml = isAnswerFilled ? '' : options.map(option => {
                 const escapedOption = option.replace(/'/g, "\\'"); // 修正：轉義單引號
+                
+                // **修正：選項大小寫應用句首規則**
+                // 只有在選項是正確答案且填空在句首時，才應用大寫。
+                // 否則，保持後台植入的原始大小寫。
+                const isCorrectOption = option === currentQ.answer;
+                
+                let displayOption = formatDisplayWord(option, false); // 預設不應用句首規則 (保持後台植入)
+
+                if (isCorrectOption && isAnswerSentenceStartG4) {
+                    // 如果是正確答案 且 是句首，則強制句首大寫
+                    displayOption = formatDisplayWord(option, true);
+                } else if (!isCorrectOption) {
+                     // 如果是干擾項，則保持其在 getAllDecoyOptions 中返回的原樣（通常是大寫）
+                     // 但這裡我們使用 formatDisplayWord(option, false) 已經可以保留原始大小寫了
+                     displayOption = formatDisplayWord(option, false);
+                } else {
+                     // 正確答案，但不是句首，則保持後台植入的大小寫
+                     displayOption = formatDisplayWord(option, false);
+                }
+
+
                 return `
                     <button onclick="handleAnswerG4('${escapedOption}')"
                         class="g4-option-btn key-btn font-bold py-3 rounded-xl shadow-lg">
-                    ${formatDisplayWord(option)}
+                    ${displayOption}
                 </button>
             `;
             }).join('');
