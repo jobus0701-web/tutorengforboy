@@ -283,10 +283,10 @@
         let selectedWordIds = new Set();
         let editingItemId = null; 
         
-        const ALL_VERBS = ['JUMP', 'RUN', 'WALK', 'SWIM', 'SLEEP', 'READ', 'DANCE', 'SING', 'WRITE', 'TALK', 'EAT', 'DRINK'];
-        // **修正：擴充形容詞列表，以包含更多單音節詞和多音節詞進行智能測試**
-        const ALL_ADJECTIVES = ['TALL', 'SHORT', 'FAST', 'SLOW', 'HAPPY', 'SAD', 'BIG', 'SMALL', 'OLD', 'NEW', 'BRIGHT', 'CLEAN', 'BEAUTIFUL', 'EXPENSIVE']; 
-        const GENERAL_GRAMMAR = ['IS', 'AM', 'ARE', 'WAS', 'WERE', 'DO', 'DOES', 'DID', 'HAS', 'HAVE', 'HAD', 'IN', 'ON', 'AT', 'TO', 'FOR', 'OF', 'MUCH', 'MANY', 'HOW'];
+        // **修正：改為全小寫，作為默認干擾項，避免強制大寫**
+        const ALL_VERBS = ['jump', 'run', 'walk', 'swim', 'sleep', 'read', 'dance', 'sing', 'write', 'talk', 'eat', 'drink'];
+        const ALL_ADJECTIVES = ['tall', 'short', 'fast', 'slow', 'happy', 'sad', 'big', 'small', 'old', 'new', 'bright', 'clean', 'beautiful', 'expensive']; 
+        const GENERAL_GRAMMAR = ['is', 'am', 'are', 'was', 'were', 'do', 'does', 'did', 'has', 'have', 'had', 'in', 'on', 'at', 'to', 'for', 'of', 'much', 'many', 'how'];
         
         // --- G7 輔助工具：反義詞映射表 (Antonym Map) ---
         const ANTONYM_MAP = {
@@ -311,13 +311,14 @@
                 { id: 'a5', verb: 'DANCE' },
             ],
             g4_grammar: [
-                { id: 'g1', sentence: 'I __ playing my toys.', answer: 'AM' },
-                { id: 'g2', sentence: 'She __ a doctor.', answer: 'IS' },
-                { id: 'g3', sentence: 'The cat is __ the box.', answer: 'IN' },
-                { id: 'g4', sentence: 'They __ happy.', answer: 'ARE' },
-                { id: 'g5', sentence: 'He __ milk every day.', answer: 'DRINKS' },
-                // Added for testing capitalization fix (to be added by user in the backend if needed)
-                // { id: 'g6', sentence: '__ is your name?', answer: 'WHAT' }, 
+                // 注意：後台輸入必須保留其原始大小寫
+                { id: 'g1', sentence: 'I __ playing my toys.', answer: 'am' }, 
+                { id: 'g2', sentence: 'She __ a doctor.', answer: 'is' },
+                { id: 'g3', sentence: 'The cat is __ the box.', answer: 'in' },
+                { id: 'g4', sentence: 'They __ happy.', answer: 'are' },
+                { id: 'g5', sentence: 'He __ milk every day.', answer: 'drinks' },
+                { id: 'g6', sentence: '__ you have Math today?', answer: 'Do' }, // 句首大寫測試
+                { id: 'g7', sentence: 'Where __ you going?', answer: 'are' }, // 非句首小寫測試
             ],
             g5_true_false: [
                 { id: 't1', statement: 'This is a small dog.', imageUrl: 'https://placehold.co/150x120/8254A9/FFFFFF?text=BIG+DOG', answer: false },
@@ -418,6 +419,7 @@
             if (typeof word !== 'string') return word;
             
             let displayWord = word.replace(/_/g, ' ');
+            const originalWord = displayWord;
 
             // 1. 檢查 'I' (永遠大寫)
             if (displayWord.length === 1 && displayWord.toUpperCase() === 'I') return 'I';
@@ -429,7 +431,7 @@
                  return firstLetter + restOfWord; // Keeps input case for the rest of the word
             }
 
-            // 3. 預設：顯示為後台輸入的原樣 (大小寫完全保留)
+            // 3. 預設：顯示為後台輸入的原樣 (大小寫完全保留，不強制小寫)
             return displayWord;
         }
 
@@ -806,17 +808,18 @@
         function getAllDecoyOptions(dataKey, currentCorrectAnswer) {
             let allOptions = new Set();
             
-            // 基礎動詞和通用文法詞彙
-            ALL_VERBS.forEach(v => allOptions.add(v.toUpperCase()));
-            GENERAL_GRAMMAR.forEach(g => allOptions.add(g.toUpperCase()));
+            // 基礎動詞和通用文法詞彙 (使用小寫作為預設干擾項，避免強制大寫)
+            ALL_VERBS.forEach(v => allOptions.add(v)); 
+            GENERAL_GRAMMAR.forEach(g => allOptions.add(g)); 
             
             // 1. G3: 動作指令 (Verb)
             if (dataKey === 'g3_actions') {
-                localData.g3_actions.forEach(q => allOptions.add(q.verb.toUpperCase()));
+                localData.g3_actions.forEach(q => allOptions.add(q.verb));
             } 
             // 2. G4: 文法停車場 (Grammar Answers)
             else if (dataKey === 'g4_grammar') {
-                localData.g4_grammar.forEach(q => allOptions.add(q.answer.toUpperCase()));
+                // **修正：只收集原始大小寫的答案，不進行 toUpperCase()**
+                localData.g4_grammar.forEach(q => allOptions.add(q.answer));
             } 
             // 3. G6: 尋寶問答 (Sentence) - **此處已修正**
             else if (dataKey === 'g6_qa_match') {
@@ -831,7 +834,6 @@
                 
                 // G4: 填入答案的完整句子 (句型結構干擾)
                 localData.g4_grammar.forEach(q => {
-                    // Use the raw sentence structure for decoy, not formatDisplayWord, to keep original case
                     const sentence = q.sentence.replace(/__/g, q.answer); 
                     sentencePool.add(sentence);
                 });
@@ -865,11 +867,11 @@
                 ALL_ADJECTIVES.forEach(adj => allOptions.add(_getComparativeForm(adj)));
             }
             
-            // 移除正確答案 (大小寫敏感或不敏感)
-            allOptions.delete(currentCorrectAnswer.toUpperCase ? currentCorrectAnswer.toUpperCase() : currentCorrectAnswer);
-            allOptions.delete(currentCorrectAnswer);
+            // 移除正確答案 (為了保險，移除完全匹配的，以及大寫匹配的)
+            const upperCaseAnswer = currentCorrectAnswer.toUpperCase();
+            let rawDecoys = Array.from(allOptions).filter(option => option.toUpperCase() !== upperCaseAnswer);
             
-            return shuffleArray(Array.from(allOptions));
+            return shuffleArray(rawDecoys);
         }
 
         // --- Game 3: 動作指令 (🦸) ---
@@ -1005,7 +1007,7 @@
             const questionNumber = state.currentQIndex + 1;
             
             // --- G4 智能干擾項生成 ---
-            const correctAnswer = currentQ.answer.toUpperCase();
+            const correctAnswer = currentQ.answer; 
             let decoys = getAllDecoyOptions('g4_grammar', correctAnswer);
             
             // 選取 3 個干擾項 (總共 4 個選項)
@@ -1024,7 +1026,7 @@
             
             // 1. 決定填空內容的 HTML
             const blankHtml = isAnswerFilled 
-                ? `<span class="g4-blank g4-blank-filled">${formatDisplayWord(state.g4_displaySentence)}</span>`
+                ? `<span class="g4-blank g4-blank-filled">${formatDisplayWord(state.g4_displaySentence, isAnswerSentenceStartG4)}</span>` // 這裡需要應用句首規則給填入的答案
                 : `<span class="g4-blank">...</span>`;
 
             // 2. 組合句子
@@ -1041,7 +1043,7 @@
                 } else {
                      // 插入填空
                      questionTextHtml += blankHtml;
-                     // 插入填空之後的部分 (Part i > 0)
+                     // 插入後續部分
                      if (part.length > 0) {
                         // 應用普通單字大小寫規則 (保留後台輸入的大小寫)
                          questionTextHtml += formatDisplayWord(part, false);
@@ -1054,22 +1056,16 @@
             const optionsHtml = isAnswerFilled ? '' : options.map(option => {
                 const escapedOption = option.replace(/'/g, "\\'"); // 修正：轉義單引號
                 
-                // **修正：選項大小寫應用句首規則**
-                // 只有在選項是正確答案且填空在句首時，才應用大寫。
-                // 否則，保持後台植入的原始大小寫。
+                // **修正：選項大小寫應用句首規則 (只有正確答案且位於句首時才大寫)**
                 const isCorrectOption = option === currentQ.answer;
                 
-                let displayOption = formatDisplayWord(option, false); // 預設不應用句首規則 (保持後台植入)
+                let displayOption = formatDisplayWord(option, false); // 預設保留後台植入的大小寫
 
                 if (isCorrectOption && isAnswerSentenceStartG4) {
                     // 如果是正確答案 且 是句首，則強制句首大寫
                     displayOption = formatDisplayWord(option, true);
-                } else if (!isCorrectOption) {
-                     // 如果是干擾項，則保持其在 getAllDecoyOptions 中返回的原樣（通常是大寫）
-                     // 但這裡我們使用 formatDisplayWord(option, false) 已經可以保留原始大小寫了
-                     displayOption = formatDisplayWord(option, false);
                 } else {
-                     // 正確答案，但不是句首，則保持後台植入的大小寫
+                     // 否則，干擾項和非句首正確答案，保持後台植入的原樣
                      displayOption = formatDisplayWord(option, false);
                 }
 
