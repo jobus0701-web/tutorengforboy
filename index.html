@@ -432,7 +432,7 @@
             }
 
             // 3. 預設：顯示為後台輸入的原樣 (大小寫完全保留，不強制小寫)
-            return displayWord;
+            return originalWord;
         }
 
         // --- LocalStorage 存儲功能 (統一管理所有遊戲數據) ---
@@ -834,6 +834,7 @@
                 
                 // G4: 填入答案的完整句子 (句型結構干擾)
                 localData.g4_grammar.forEach(q => {
+                    // Use the raw sentence structure for decoy, not formatDisplayWord, to keep original case
                     const sentence = q.sentence.replace(/__/g, q.answer); 
                     sentencePool.add(sentence);
                 });
@@ -1043,7 +1044,7 @@
                 } else {
                      // 插入填空
                      questionTextHtml += blankHtml;
-                     // 插入後續部分
+                     // 插入填空之後的部分 (Part i > 0)
                      if (part.length > 0) {
                         // 應用普通單字大小寫規則 (保留後台輸入的大小寫)
                          questionTextHtml += formatDisplayWord(part, false);
@@ -1233,11 +1234,6 @@
             // 隨機選取 3 個作為干擾選項 (總共 4 個選項)
             decoys = decoys.slice(0, 3); 
             
-            // 確保選項數量為 4
-            // 由於 getAllDecoyOptions 已經確保了句型干擾項，這裡不再需要複雜的 while 循環，
-            // 而是依賴於 decoys 的數量和品質。如果 decoys 不足 3 個，它只會提供現有的。
-            // 但為了滿足 4 選項的要求，我們應在 getAllDecoyOptions 處檢查和補充。
-
             // Final options check:
             const options = shuffleArray([correctAnswer, ...decoys]); 
             // --- 簡化邏輯結束 ---
@@ -1442,10 +1438,14 @@
 
             const optionsHtml = comparativeOptions.map(comp => {
                 const escapedComp = comp.replace(/'/g, "\\'"); // 修正：轉義單引號
+                
+                // 修正：比較級選項全部小寫 (您的要求)
+                const displayOption = formatDisplayWord(comp, false).toLowerCase(); 
+
                 return `
                     <button onclick="handleAnswerG7('${escapedComp}')"
                         class="key-btn g7-option-btn-style font-bold py-3 rounded-xl text-lg shadow-cute">
-                    ${formatDisplayWord(comp)}
+                    ${displayOption}
                 </button>
             `;
             }).join('');
