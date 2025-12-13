@@ -81,13 +81,57 @@
             font-size: 1.5rem;
             font-weight: bold;
         }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        .shake { animation: shake 0.5s; }
 
+        /* Game 3: 單字尋寶趣 (Word Search) */
+        .g3-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 2px;
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+            background-color: #FFFFFF; /* 白色背景 */
+            padding: 10px;
+            border-radius: 0.5rem;
+            border: 4px solid #4299E1; /* Blue 500 */
+        }
+        .g3-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 4px;
+            user-select: none;
+            border: 1px solid #E2E8F0;
+            transition: all 0.2s;
+            color: #2D3748;
+        }
+        .g3-cell:hover {
+            background-color: #EBF8FF;
+        }
+        .g3-cell.selected {
+            background-color: #FBD38D; /* Orange 200 */
+            color: #C05621;
+            border-color: #F6AD55;
+        }
+        .g3-cell.found {
+            background-color: #68D391; /* Green 400 */
+            color: white;
+            border-color: #48BB78;
+            animation: pulse 0.5s;
+        }
+        .g3-word-item {
+            transition: all 0.3s;
+        }
+        .g3-word-item.found {
+            text-decoration: line-through;
+            color: #A0AEC0; /* Gray 500 */
+            background-color: #EDF2F7;
+        }
 
         /* Game 4: 文法停車場 (Car/Parking Lot) - 停車場優化 */
         /* 停車格按鈕 */
@@ -211,6 +255,17 @@
             border-radius: 4px;
             font-size: 0.9rem;
         }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.5s; }
     </style>
 </head>
 <body class="bg-background-light min-h-screen game-font flex flex-col items-center p-4">
@@ -237,7 +292,7 @@
         <div class="grid grid-cols-4 gap-2 md:gap-4 justify-center" id="game-nav">
             <button data-game="game1" class="tab-btn">🦖 詞彙對對碰</button>
             <button data-game="game2" class="tab-btn">🤖 拼讀機器人</button>
-            <button data-game="game3" class="tab-btn">🦸 動作指令</button>
+            <button data-game="game3" class="tab-btn">🔎 單字尋寶趣</button>
             <button data-game="game4" class="tab-btn">🚗 文法停車場</button>
             <button data-game="game5" class="tab-btn">🤥 誰說謊了?</button>
             <button data-game="game6" class="tab-btn">🗺️ 尋寶問答</button>
@@ -273,7 +328,7 @@
         }
         
         const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
-        const LOCAL_STORAGE_KEY = 'GAMES_CUSTOM_DATA_V4'; 
+        const LOCAL_STORAGE_KEY = 'GAMES_CUSTOM_DATA_V6'; 
         // 修正：所有問答/拼圖遊戲都最大 10 題 (G1 無題數)
         const MAX_QUESTIONS = { g2: 10, g3: 10, g4: 10, g5: 10, g6: 10, g7: 10 }; 
 
@@ -283,11 +338,23 @@
         let selectedWordIds = new Set();
         let editingItemId = null; 
         
-        // **修正：改為全小寫，作為默認干擾項，避免強制大寫**
+        // **修正：通用詞彙庫全小寫化**
         const ALL_VERBS = ['jump', 'run', 'walk', 'swim', 'sleep', 'read', 'dance', 'sing', 'write', 'talk', 'eat', 'drink'];
         const ALL_ADJECTIVES = ['tall', 'short', 'fast', 'slow', 'happy', 'sad', 'big', 'small', 'old', 'new', 'bright', 'clean', 'beautiful', 'expensive']; 
         const GENERAL_GRAMMAR = ['is', 'am', 'are', 'was', 'were', 'do', 'does', 'did', 'has', 'have', 'had', 'in', 'on', 'at', 'to', 'for', 'of', 'much', 'many', 'how'];
         
+        // **新增**：中文預設提示詞映射表
+        const DEFAULT_HINTS = {
+            'is': '是', 'am': '是', 'are': '是', 'was': '過去式(是)', 'were': '過去式(是)',
+            'do': '助動詞/疑問詞', 'does': '助動詞/疑問詞', 'did': '過去式(助動詞)',
+            'has': '擁有/完成式', 'have': '擁有/完成式', 'had': '過去式(擁有)',
+            'in': '在...裡面', 'on': '在...上面', 'at': '在...位置', 'to': '到', 'for': '為了', 'of': '的',
+            'drinks': '喝', 'playing': '玩',
+            'big': '大', 'small': '小', 'beautiful': '美麗', 'tall': '高', 'short': '矮/短',
+            'faster': '更快', 'taller': '更高', 'smaller': '更小',
+            'better': '更好', 'worse': '更糟', 'more beautiful': '更美麗'
+        };
+
         // --- G7 輔助工具：反義詞映射表 (Antonym Map) ---
         const ANTONYM_MAP = {
             'TALL': 'SHORT', 'SHORT': 'TALL',
@@ -305,20 +372,20 @@
                 { id: 'w3', word: 'CAR', emoji: '🚗' }, { id: 'w4', word: 'BIRD', emoji: '🐦' },
             ],
             g2_words: ['ROBOT', 'COMPUTER', 'SPACESHIP', 'BUTTON', 'MEMORY', 'KEYBOARD', 'MONITOR', 'MOUSE', 'CABLE', 'PRINTER'],
-            g3_actions: [
-                { id: 'a1', verb: 'JUMP' }, { id: 'a2', verb: 'SWIM' },
-                { id: 'a3', verb: 'SLEEP' }, { id: 'a4', verb: 'READ' },
-                { id: 'a5', verb: 'DANCE' },
+            // G3 改為通用單字尋寶 (任何詞性)
+            g3_words: [
+                { id: 'a1', verb: 'JUMP' }, { id: 'a2', verb: 'APPLE' },
+                { id: 'a3', verb: 'SCHOOL' }, { id: 'a4', verb: 'READ' },
+                { id: 'a5', verb: 'HAPPY' },
             ],
             g4_grammar: [
-                // 注意：後台輸入必須保留其原始大小寫
-                { id: 'g1', sentence: 'I __ playing my toys.', answer: 'am' }, 
-                { id: 'g2', sentence: 'She __ a doctor.', answer: 'is' },
-                { id: 'g3', sentence: 'The cat is __ the box.', answer: 'in' },
-                { id: 'g4', sentence: 'They __ happy.', answer: 'are' },
-                { id: 'g5', sentence: 'He __ milk every day.', answer: 'drinks' },
-                { id: 'g6', sentence: '__ you have Math today?', answer: 'Do' }, // 句首大寫測試
-                { id: 'g7', sentence: 'Where __ you going?', answer: 'are' }, // 非句首小寫測試
+                { id: 'g1', sentence: 'I __ playing my toys.', answer: 'am', hint: '是/正在' }, 
+                { id: 'g2', sentence: 'She __ a doctor.', answer: 'is', hint: '是' },
+                { id: 'g3', sentence: 'The cat is __ the box.', answer: 'in', hint: '在...裡面' },
+                { id: 'g4', sentence: 'They __ happy.', answer: 'are', hint: '是' },
+                { id: 'g5', sentence: 'He __ milk every day.', answer: 'drinks', hint: '喝' },
+                { id: 'g6', sentence: '__ you have Math today?', answer: 'Do', hint: '助動詞/疑問詞' },
+                { id: 'g7', sentence: 'Where __ you going?', answer: 'are', hint: '是' }, 
             ],
             g5_true_false: [
                 { id: 't1', statement: 'This is a small dog.', imageUrl: 'https://placehold.co/150x120/8254A9/FFFFFF?text=BIG+DOG', answer: false },
@@ -331,9 +398,9 @@
                 { id: 'q3', question: 'Where is the library?', answer: "IT IS NEXT TO THE BANK." },
             ],
             g7_comparatives: [
-                { id: 'c1', nounA: 'Elephant', nounB: 'Mouse', adj: 'BIG', urlA: 'https://placehold.co/150x120/3CB371/FFFFFF?text=A', urlB: 'https://placehold.co/150x120/FFD700/000000?text=B' },
-                { id: 'c2', nounA: 'Pencil', nounB: 'Ruler', adj: 'LONG', urlA: 'https://placehold.co/150x120/87CEEB/FFFFFF?text=A', urlB: 'https://placehold.co/150x120/FA8072/FFFFFF?text=B' },
-                { id: 'c3', nounA: 'Rose', nounB: 'Daisy', adj: 'BEAUTIFUL', urlA: 'https://placehold.co/150x120/FF69B4/FFFFFF?text=A', urlB: 'https://placehold.co/150x120/F0E68C/000000?text=B' } // Added multi-syllable word
+                { id: 'c1', nounA: 'Elephant', nounB: 'Mouse', answer: 'bigger', urlA: 'https://placehold.co/150x120/3CB371/FFFFFF?text=A', urlB: 'https://placehold.co/150x120/FFD700/000000?text=B', hint: '更大的' },
+                { id: 'c2', nounA: 'Pencil', nounB: 'Ruler', answer: 'longer', urlA: 'https://placehold.co/150x120/87CEEB/FFFFFF?text=A', urlB: 'https://placehold.co/150x120/FA8072/FFFFFF?text=B', hint: '更長的' },
+                { id: 'c3', nounA: 'Rose', nounB: 'Daisy', answer: 'more beautiful', urlA: 'https://placehold.co/150x120/FF69B4/FFFFFF?text=A', urlB: 'https://placehold.co/150x120/F0E68C/000000?text=B', hint: '更美麗的' } 
             ],
         };
 
@@ -342,22 +409,24 @@
         let state = {
             // G1: Match Card
             g1_matchCards: [], g1_flippedCards: [], g1_matchCount: 0, g1_gameStatus: 'ready',
-            // G2: Spelling Robot (Quiz mode now)
+            // G2: Spelling Robot (Quiz mode)
             g2_currentWord: '', g2_shuffledLetters: [], g2_answerSlots: [], g2_gameStatus: 'ready',
+            // G3 Word Search
+            g3_grid: [], g3_targetWords: [], g3_foundWords: new Set(), g3_foundCells: new Set(), g3_selectionStart: null, g3_selectedCells: [], g3_gameStatus: 'ready', g3_score: 0,
             
-            // Quizzes (G3, G4, G5, G6, G7)
+            // Quizzes
             currentQuizSet: [], currentQIndex: 0, score: 0, gameStatus: 'ready', MAX_QUESTIONS_KEY: 'g3',
             
-            // **修正**：追蹤計分和失敗狀態
-            currentQHasScored: false, // 是否已經加分 (首次答對)
-            currentQHasFailed: false, // 是否有錯誤嘗試 (只要錯一次，就不能再加分)
+            currentQHasScored: false, 
+            currentQHasFailed: false, 
             
-            // G4 specific: store the current sentence with the filled answer
+            // G4 specific
             g4_displaySentence: '',
             // G6 Treasure
             g6_treasures: 0, 
-            // G7 Comparative: { ...currentQ, isAisB: boolean }
+            // G7 Comparative
             g7_currentQuestion: null,
+            g7_inputAnswer: '', // 儲存 G7 的輸入答案
         };
 
         // --- TTS & Utility (保持不變) ---
@@ -413,25 +482,16 @@
             return temp;
         }
         
-        // **修正 formatDisplayWord 邏輯：處理句首大寫和專有名詞大小寫**
-        // 新邏輯：優先保留後台輸入的大小寫，僅在句首強制首字母大寫。
         function formatDisplayWord(word, isSentenceStart = false) {
             if (typeof word !== 'string') return word;
-            
             let displayWord = word.replace(/_/g, ' ');
             const originalWord = displayWord;
-
-            // 1. 檢查 'I' (永遠大寫)
             if (displayWord.length === 1 && displayWord.toUpperCase() === 'I') return 'I';
-            
-            // 2. 規則 1: 處理句首大寫 (強制首字母大寫，其餘部分保留輸入的大小寫)
             if (isSentenceStart && displayWord.length > 0) {
                  const firstLetter = displayWord.charAt(0).toUpperCase();
                  const restOfWord = displayWord.slice(1);
-                 return firstLetter + restOfWord; // Keeps input case for the rest of the word
+                 return firstLetter + restOfWord; 
             }
-
-            // 3. 預設：顯示為後台輸入的原樣 (大小寫完全保留，不強制小寫)
             return originalWord;
         }
 
@@ -440,9 +500,7 @@
             try {
                 const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
                 const loaded = stored ? JSON.parse(stored) : {};
-                
                 localData = JSON.parse(JSON.stringify(DEFAULT_WORDS));
-                
                 for (const key in loaded) {
                     if (Array.isArray(loaded[key])) {
                         localData[key] = loaded[key].map(item => {
@@ -513,26 +571,21 @@
             }
         }
 
-        // --- Quiz Game Helper Functions (適用於 G2, G3, G4, G5, G6, G7) ---
+        // --- Quiz Game Helper Functions (適用於 G2, G4, G5, G6, G7) ---
         function setupQuiz(dataKey, gameId, maxQOverride = null) {
             const source = localData[dataKey];
-            // 修正：題數上限為 MAX_QUESTIONS[gameId] (最多 10 題)
             const maxQ = maxQOverride || MAX_QUESTIONS[gameId]; 
             
             if (source.length === 0) { 
                 MessageBox.show("請在後台新增題目！", true); 
                 return false;
             }
-
-            // 確保選取的題目數量不超過 maxQ 或可用題數
             const numQuestions = Math.min(source.length, maxQ);
-
             state.currentQuizSet = shuffleArray(source).slice(0, numQuestions);
             state.currentQIndex = 0;
             state.score = 0;
             state.gameStatus = 'playing';
             state.MAX_QUESTIONS_KEY = gameId; 
-            // **修正**：進入新遊戲時重置單題計分狀態
             state.currentQHasScored = false;
             state.currentQHasFailed = false;
             return true;
@@ -550,7 +603,6 @@
 
         function goToNextQuestion(renderFunc) {
             state.currentQIndex++;
-            // **修正**：進入下一題時重置單題計分狀態
             state.currentQHasScored = false;
             state.currentQHasFailed = false;
             if (!checkQuizEnd(renderFunc)) {
@@ -571,7 +623,6 @@
             let cardValues = [];
             limitedSource.forEach((item, index) => {
                 const groupId = `match-${item.word}-${index}`;
-
                 cardValues.push({ id: crypto.randomUUID(), type: 'WORD', value: item.word, groupId, matched: false, flipped: false });
                 cardValues.push({ id: crypto.randomUUID(), type: 'EMOJI', value: item.emoji, groupId, matched: false, flipped: false });
             });
@@ -658,10 +709,7 @@
 
         // --- Game 2: 拼讀機器人 (🤖) ---
         function initGame2() {
-            // **重構成 Quiz Mode**
             if (!setupQuiz('g2_words', 'g2')) return;
-            // 由於 setupQuiz 已經設置了 currentQuizSet 和 index，我們只需要初始化 G2 狀態
-            
             state.g2_gameStatus = 'playing';
             loadG2Question();
         }
@@ -721,7 +769,6 @@
             const builtWord = state.g2_answerSlots.map(slot => slot.letter).join('');
             
             if (builtWord === state.g2_currentWord) {
-                // 修正：答對時檢查是否已計分或已失敗
                 if (!state.currentQHasFailed && !state.currentQHasScored) {
                     state.score++;
                     state.currentQHasScored = true;
@@ -730,16 +777,13 @@
                     MessageBox.show(`拼字成功！請準備下一題。`, false);
                 }
                 
-                // 延遲後進入下一題
                 setTimeout(() => {
                     goToNextQuestion(renderGame2);
                     if (state.gameStatus === 'playing') loadG2Question();
                 }, 1000);
 
             } else {
-                // INCORRECT attempt: immediately prevent scoring.
-                state.currentQHasFailed = true; // 只要錯一次，就不能加分
-                
+                state.currentQHasFailed = true; 
                 const display = document.getElementById('g2-answer-display');
                 if (display) {
                     display.classList.add('shake');
@@ -804,156 +848,188 @@
         }
         // --- Game 2 End ---
         
-        // --- G3, G6, G7 輔助函數：收集所有選項 ---
-        function getAllDecoyOptions(dataKey, currentCorrectAnswer) {
-            let allOptions = new Set();
+        // --- Game 3: 動作指令 (Word Search) ---
+        // 生成 Word Search 網格
+        function generateWordSearchGrid() {
+            const grid = Array(10).fill(null).map(() => Array(10).fill(''));
+            // 從 g3_words 選最多 10 個單字
+            const source = localData.g3_words.map(a => a.verb.toUpperCase()); // 使用 verb 字段
+            const targets = shuffleArray(source).slice(0, 10);
             
-            // 基礎動詞和通用文法詞彙 (使用小寫作為預設干擾項，避免強制大寫)
-            ALL_VERBS.forEach(v => allOptions.add(v)); 
-            GENERAL_GRAMMAR.forEach(g => allOptions.add(g)); 
-            
-            // 1. G3: 動作指令 (Verb)
-            if (dataKey === 'g3_actions') {
-                localData.g3_actions.forEach(q => allOptions.add(q.verb));
-            } 
-            // 2. G4: 文法停車場 (Grammar Answers)
-            else if (dataKey === 'g4_grammar') {
-                // **修正：只收集原始大小寫的答案，不進行 toUpperCase()**
-                localData.g4_grammar.forEach(q => allOptions.add(q.answer));
-            } 
-            // 3. G6: 尋寶問答 (Sentence) - **此處已修正**
-            else if (dataKey === 'g6_qa_match') {
-                // **步驟 1: 收集所有句子/句型結構 (排除單字)**
-                let sentencePool = new Set();
+            // 擺放單字
+            const directions = [[0, 1], [1, 0], [1, 1]];
+            const placedWords = [];
 
-                // G6: 答案和問句
-                localData.g6_qa_match.forEach(q => {
-                    sentencePool.add(q.answer);
-                    sentencePool.add(q.question); // Question as a decoy answer (wrong context)
-                });
-                
-                // G4: 填入答案的完整句子 (句型結構干擾)
-                localData.g4_grammar.forEach(q => {
-                    // Use the raw sentence structure for decoy, not formatDisplayWord, to keep original case
-                    const sentence = q.sentence.replace(/__/g, q.answer); 
-                    sentencePool.add(sentence);
-                });
-                
-                // G5: 陳述句 (True/False statements)
-                localData.g5_true_false.forEach(q => sentencePool.add(q.statement));
+            for (const word of targets) {
+                let placed = false;
+                let attempts = 0;
+                while (!placed && attempts < 100) {
+                    const dir = directions[Math.floor(Math.random() * directions.length)];
+                    const startR = Math.floor(Math.random() * 10);
+                    const startC = Math.floor(Math.random() * 10);
+                    const endR = startR + dir[0] * (word.length - 1);
+                    const endC = startC + dir[1] * (word.length - 1);
 
-                // 內建通用句子 (作為強力備援干擾項，確保選項不重複且為句子)
-                sentencePool.add("I am happy to see you.");
-                sentencePool.add("That is a tall red building.");
-                sentencePool.add("We are going to the park now.");
-                sentencePool.add("Yes, I can play basketball.");
-                
-                // **步驟 2: 過濾：只保留句子結構 (多於 2 個詞，且不是單純的 I 或 A)**
-                sentencePool = Array.from(sentencePool).filter(s => {
-                    const tokens = s.trim().split(/\s+/).filter(t => t.length > 0);
-                    return tokens.length >= 2; 
-                });
-                
-                // 將過濾後的句子加入 allOptions (保持原始大小寫)
-                sentencePool.forEach(s => allOptions.add(s));
-            } 
-            // 4. G7: 比較級 (Comparative Forms)
-            else if (dataKey === 'g7_comparatives') {
-                localData.g7_comparatives.forEach(q => {
-                    const adj = q.adj.toUpperCase();
-                    allOptions.add(_getComparativeForm(adj));
-                    const antonym = ANTONYM_MAP[adj];
-                    if(antonym) allOptions.add(_getComparativeForm(antonym));
-                });
-                ALL_ADJECTIVES.forEach(adj => allOptions.add(_getComparativeForm(adj)));
+                    if (endR >= 0 && endR < 10 && endC >= 0 && endC < 10) {
+                        let collision = false;
+                        for (let i = 0; i < word.length; i++) {
+                            const r = startR + dir[0] * i;
+                            const c = startC + dir[1] * i;
+                            if (grid[r][c] !== '' && grid[r][c] !== word[i]) {
+                                collision = true; break;
+                            }
+                        }
+                        if (!collision) {
+                            for (let i = 0; i < word.length; i++) {
+                                grid[startR + dir[0] * i][startC + dir[1] * i] = word[i];
+                            }
+                            placedWords.push(word);
+                            placed = true;
+                        }
+                    }
+                    attempts++;
+                }
             }
-            
-            // 移除正確答案 (為了保險，移除完全匹配的，以及大寫匹配的)
-            const upperCaseAnswer = currentCorrectAnswer.toUpperCase();
-            let rawDecoys = Array.from(allOptions).filter(option => option.toUpperCase() !== upperCaseAnswer);
-            
-            return shuffleArray(rawDecoys);
+
+            // 填滿剩餘空格
+            for (let i = 0; i < 10; i++) {
+                for (let j = 0; j < 10; j++) {
+                    if (grid[i][j] === '') {
+                        grid[i][j] = ALPHABET[Math.floor(Math.random() * 26)].toUpperCase();
+                    }
+                }
+            }
+
+            state.g3_grid = grid;
+            state.g3_targetWords = placedWords;
+            state.g3_foundWords = new Set();
+            state.g3_foundCells = new Set(); // Reset found cells for color clearing
+            state.g3_selectionStart = null;
+            state.g3_score = 0; 
         }
 
-        // --- Game 3: 動作指令 (🦸) ---
         function initGame3() {
-            if (!setupQuiz('g3_actions', 'g3')) return;
+            if (localData.g3_words.length === 0) { MessageBox.show("請在後台新增單字！", true); return; }
+            generateWordSearchGrid();
+            state.g3_gameStatus = 'playing';
             renderGame3();
         }
 
-        async function handleAnswerG3(selectedVerb) {
-            if (state.gameStatus !== 'playing') return;
+        function handleGridClickG3(row, col) {
+            if (state.g3_gameStatus !== 'playing') return;
 
-            const currentQ = state.currentQuizSet[state.currentQIndex];
-            
-            if (selectedVerb === currentQ.verb) {
-                // 修正：答對時檢查是否已計分或已失敗
-                if (!state.currentQHasFailed && !state.currentQHasScored) {
-                    state.score++;
-                    state.currentQHasScored = true;
-                    MessageBox.show("答對了！超級英雄動作正確！🦸 (+1 分)", false);
-                } else {
-                    MessageBox.show("答對了！請準備下一題。🦸", false);
-                }
-                
-                // 延遲後進入下一題
-                setTimeout(() => goToNextQuestion(renderGame3), 1000);
+            if (!state.g3_selectionStart) {
+                state.g3_selectionStart = { r: row, c: col };
             } else {
-                // 答錯，不計分，不跳題
-                state.currentQHasFailed = true; // 只要錯一次，就不能加分
-                MessageBox.show(`答錯了，請再試試看！`, true);
+                checkSelectionG3(state.g3_selectionStart, { r: row, c: col });
+                state.g3_selectionStart = null;
+            }
+            renderGame3();
+        }
+
+        function checkSelectionG3(start, end) {
+            const dr = end.r - start.r;
+            const dc = end.c - start.c;
+            const steps = Math.max(Math.abs(dr), Math.abs(dc));
+            
+            if (steps === 0) return; 
+
+            const stepR = dr === 0 ? 0 : dr / Math.abs(dr);
+            const stepC = dc === 0 ? 0 : dc / Math.abs(dc);
+
+            if (start.r + stepR * steps !== end.r || start.c + stepC * steps !== end.c) {
+                 MessageBox.show("請選擇直線路徑！", true);
+                 return;
+            }
+
+            let selectedWord = "";
+            let pathCells = [];
+            for (let i = 0; i <= steps; i++) {
+                const r = start.r + stepR * i;
+                const c = start.c + stepC * i;
+                selectedWord += state.g3_grid[r][c];
+                pathCells.push({r, c});
+            }
+
+            const reversedWord = selectedWord.split('').reverse().join('');
+            let found = null;
+
+            if (state.g3_targetWords.includes(selectedWord) && !state.g3_foundWords.has(selectedWord)) {
+                found = selectedWord;
+            } else if (state.g3_targetWords.includes(reversedWord) && !state.g3_foundWords.has(reversedWord)) {
+                found = reversedWord;
+            }
+
+            if (found) {
+                state.g3_foundWords.add(found);
+                state.g3_score++; 
+                if (!state.g3_foundCells) state.g3_foundCells = new Set();
+                pathCells.forEach(cell => state.g3_foundCells.add(`${cell.r},${cell.c}`));
+                MessageBox.show(`找到單字：${found}！🎉 (+1 分)`, false);
+                
+                if (state.g3_foundWords.size === state.g3_targetWords.length) {
+                    state.g3_gameStatus = 'won';
+                    setTimeout(() => MessageBox.show("恭喜！所有單字都找到了！", false), 1000);
+                }
+            } else {
+                 if(state.g3_foundWords.has(selectedWord) || state.g3_foundWords.has(reversedWord)) {
+                      MessageBox.show("這個單字已經找過了。", true);
+                 } else {
+                      MessageBox.show("不是目標單字，再試試！", true);
+                 }
             }
         }
 
         function renderGame3() {
             const container = document.getElementById('game-content');
-            if (!container || currentGame !== 'game3') return; 
+            if (currentGame !== 'game3') return;
 
-            if (state.gameStatus === 'finished') {
-                container.innerHTML = getFinishedScreen('🦸 動作指令', state.score, state.currentQuizSet.length, initGame3);
-                return;
+            if (state.g3_gameStatus === 'won') {
+                 container.innerHTML = getFinishedScreen('🔎 單字尋寶趣', state.g3_score, state.g3_targetWords.length, initGame3);
+                 return;
             }
-            
-            const currentQ = state.currentQuizSet[state.currentQIndex];
-            const questionNumber = state.currentQIndex + 1;
-            
-            // --- G3 簡化邏輯：動態生成干擾選項 ---
-            const correctAnswer = currentQ.verb;
-            let decoys = getAllDecoyOptions('g3_actions', correctAnswer);
-            
-            // 隨機選取 2 個作為干擾選項 (總共 3 個選項)
-            decoys = decoys.slice(0, 2); 
-            
-            const options = shuffleArray([correctAnswer, ...decoys]);
-            // --- 簡化邏輯結束 ---
-            
-            const optionsHtml = options.map(verb => {
-                 const escapedVerb = verb.replace(/'/g, "\\'"); // 修正：轉義單引號
-                return `
-                    <button onclick="handleAnswerG3('${escapedVerb}')"
-                        class="key-btn bg-accent-yellow hover:bg-yellow-400 text-gray-800 font-bold py-4 rounded-xl text-2xl shadow-cute">
-                    ${formatDisplayWord(verb)}
-                </button>
-            `;
+
+            let gridHtml = '';
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 10; c++) {
+                    const char = state.g3_grid[r][c];
+                    const isSelected = state.g3_selectionStart && state.g3_selectionStart.r === r && state.g3_selectionStart.c === c;
+                    const isFound = state.g3_foundCells && state.g3_foundCells.has(`${r},${c}`);
+                    
+                    let cellClass = 'g3-cell';
+                    if (isSelected) cellClass += ' selected';
+                    if (isFound) cellClass += ' found';
+
+                    gridHtml += `<div class="${cellClass}" onclick="handleGridClickG3(${r}, ${c})">${char}</div>`;
+                }
+            }
+
+            const wordListHtml = state.g3_targetWords.map(word => {
+                const isFound = state.g3_foundWords.has(word);
+                return `<div class="g3-word-item p-2 bg-white rounded shadow-sm text-center font-bold ${isFound ? 'found bg-gray-200' : 'text-blue-800'}">${word}</div>`;
             }).join('');
 
             container.innerHTML = `
-                <section class="w-full bg-red-600 p-4 rounded-xl shadow-inner border-b-8 border-red-900">
-                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🦸 動作指令 (action command)</h2>
-                    <p class="text-center text-sm text-red-100">目標: 聽取指令，並選擇正確的動詞卡片。分數: ${state.score}/${state.currentQuizSet.length}</p>
+                <section class="w-full bg-blue-500 p-4 rounded-xl shadow-inner border-b-8 border-blue-800">
+                    <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🔎 單字尋寶趣 (word search fun)</h2>
+                    <p class="text-center text-sm text-blue-100">目標: 在網格中找出右側列出的所有單字。點擊單字的首尾字母來選取。</p>
                 </section>
                 
-                <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-3">第 ${questionNumber} 題 / 共 ${state.currentQuizSet.length} 題</h3>
+                <div class="flex flex-col md:flex-row gap-6 p-4 justify-center">
+                    <!-- Grid -->
+                    <div class="g3-grid shadow-lg">
+                        ${gridHtml}
+                    </div>
 
-                    <button onclick="callTTS('${currentQ.verb}')" class="text-white bg-blue-500 hover:bg-blue-600 py-4 px-8 rounded-full shadow-cute mb-8 flex items-center">
-                        <span class="text-4xl mr-3">🔊</span> 點我聽動作指令
-                    </button>
-                    
-                    <h3 class="text-2xl font-bold text-gray-800 mb-6">請選擇正確的動作：</h3>
-                    
-                    <div class="grid grid-cols-3 gap-4 w-full max-w-lg">
-                        ${optionsHtml}
+                    <!-- Word List -->
+                    <div class="flex-1 bg-keyboard-bg p-4 rounded-xl shadow-md border-4 border-accent-yellow max-w-sm">
+                        <h3 class="text-lg font-bold text-gray-700 mb-3 text-center">尋找單字 (${state.g3_foundWords.size}/${state.g3_targetWords.length})</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            ${wordListHtml}
+                        </div>
+                        <div class="text-center mt-6">
+                            <button onclick="initGame3()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg">重置遊戲</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -967,13 +1043,15 @@
             renderGame4();
         }
 
-        function handleAnswerG4(selectedOption) {
+        function handleAnswerG4(enteredText) {
             if (state.gameStatus !== 'playing') return;
 
             const currentQ = state.currentQuizSet[state.currentQIndex];
             
-            if (selectedOption === currentQ.answer) {
-                // 修正：答對時檢查是否已計分
+            const normalize = (text) => text.trim().replace(/_/g, ' ').toUpperCase();
+            
+            if (normalize(enteredText) === normalize(currentQ.answer)) {
+                
                 if (!state.currentQHasFailed && !state.currentQHasScored) {
                     state.score++;
                     state.currentQHasScored = true;
@@ -982,15 +1060,11 @@
                     MessageBox.show("已答對，請點擊下一題。🚗", false);
                 }
                 
-                // 1. 儲存答案 (用於渲染填空後的句子)
-                state.g4_displaySentence = selectedOption; 
-                
-                // 2. 重新渲染 (帶有填入的答案和「下一題」按鈕)
+                state.g4_displaySentence = currentQ.answer; 
                 renderGame4(true); 
 
             } else {
-                // 答錯，不計分，不跳題
-                state.currentQHasFailed = true; // 只要錯一次，就不能加分
+                state.currentQHasFailed = true; 
                 MessageBox.show(`答錯了，請再試試！`, true);
             }
         }
@@ -1007,83 +1081,58 @@
             const currentQ = state.currentQuizSet[state.currentQIndex];
             const questionNumber = state.currentQIndex + 1;
             
-            // --- G4 智能干擾項生成 ---
-            const correctAnswer = currentQ.answer; 
-            let decoys = getAllDecoyOptions('g4_grammar', correctAnswer);
-            
-            // 選取 3 個干擾項 (總共 4 個選項)
-            decoys = decoys.slice(0, 3);
-            const options = shuffleArray([currentQ.answer, ...decoys]);
-            // --- 智能干擾項生成結束 ---
-
-            // **判斷填空是否在句首 (用於決定選項大小寫)**
-            // 檢查句子是否以 '空格+填空符' 開頭
-            const isAnswerSentenceStartG4 = currentQ.sentence.trim().toUpperCase().startsWith('__');
-            
-            // **修正 G4 填空顯示邏輯**
+            const isAnswerSentenceStartG4 = currentQ.sentence.trim().startsWith('__');
             
             const sentenceWithPlaceholders = currentQ.sentence;
             const parts = sentenceWithPlaceholders.split('__');
             
-            // 1. 決定填空內容的 HTML
-            const blankHtml = isAnswerFilled 
-                ? `<span class="g4-blank g4-blank-filled">${formatDisplayWord(state.g4_displaySentence, isAnswerSentenceStartG4)}</span>` // 這裡需要應用句首規則給填入的答案
+            const blankContent = isAnswerFilled 
+                ? `<span class="g4-blank g4-blank-filled">${formatDisplayWord(state.g4_displaySentence, isAnswerSentenceStartG4)}</span>` 
                 : `<span class="g4-blank">...</span>`;
 
-            // 2. 組合句子
             let questionTextHtml = '';
             
-            // 修正：確保句子可以正確分割和重組，並避免出現 undefined
             for(let i = 0; i < parts.length; i++) {
                 const part = parts[i].trim();
                 
-                // 如果是句子開頭 (i=0)
                 if (i === 0) {
-                     // 處理句首部分 (Part 0) - 應用句首大寫規則
                      questionTextHtml += formatDisplayWord(part, true);
                 } else {
-                     // 插入填空
-                     questionTextHtml += blankHtml;
-                     // 插入填空之後的部分 (Part i > 0)
+                     questionTextHtml += blankContent;
                      if (part.length > 0) {
-                        // 應用普通單字大小寫規則 (保留後台輸入的大小寫)
                          questionTextHtml += formatDisplayWord(part, false);
                      }
                 }
             }
-            // --- G4 填空顯示邏輯修正結束 ---
             
-            // 組合選項 HTML
-            const optionsHtml = isAnswerFilled ? '' : options.map(option => {
-                const escapedOption = option.replace(/'/g, "\\'"); // 修正：轉義單引號
-                
-                // **修正：選項大小寫應用句首規則 (只有正確答案且位於句首時才大寫)**
-                const isCorrectOption = option === currentQ.answer;
-                
-                let displayOption = formatDisplayWord(option, false); // 預設保留後台植入的大小寫
+            const hintKey = currentQ.answer.toLowerCase().replace(/_/g, ' '); 
+            const hintText = currentQ.hint || DEFAULT_HINTS[hintKey] || hintKey; 
 
-                if (isCorrectOption && isAnswerSentenceStartG4) {
-                    // 如果是正確答案 且 是句首，則強制句首大寫
-                    displayOption = formatDisplayWord(option, true);
-                } else {
-                     // 否則，干擾項和非句首正確答案，保持後台植入的原樣
-                     displayOption = formatDisplayWord(option, false);
-                }
-
-
-                return `
-                    <button onclick="handleAnswerG4('${escapedOption}')"
-                        class="g4-option-btn key-btn font-bold py-3 rounded-xl shadow-lg">
-                    ${displayOption}
-                </button>
+            const answerSectionHtml = isAnswerFilled ? '' : `
+                <div class="flex flex-col items-center p-4 w-full max-w-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mt-6 mb-4">請填寫停車位</h3>
+                    <p class="text-sm text-gray-500 mb-2">提示詞: (${hintText})</p>
+                    <div class="flex w-full space-x-2">
+                        <input type="text" 
+                               id="g4-input-answer"
+                               value="${state.g4_displaySentence}"
+                               oninput="state.g4_displaySentence = this.value;"
+                               placeholder="請輸入答案..."
+                               class="flex-grow text-2xl p-3 border-4 border-secondary-blue rounded-xl text-center font-bold focus:border-blue-500"
+                               onkeypress="if(event.key === 'Enter') handleAnswerG4(this.value);">
+                        <button onclick="handleAnswerG4(document.getElementById('g4-input-answer').value)" 
+                                class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-cute text-xl">
+                            CHECK ✅
+                        </button>
+                    </div>
+                </div>
             `;
-            }).join('');
 
 
             container.innerHTML = `
                 <section class="w-full bg-gray-400 p-4 rounded-xl shadow-inner border-b-8 border-gray-600">
                     <h2 class="text-xl md:text-3xl font-bold text-white mb-2 text-center">🚗 文法停車場 (grammar lot)</h2>
-                    <p class="text-center text-sm text-gray-800">目標: 選擇正確的動詞/介詞，將句子填完整。分數: ${state.score}/${state.currentQuizSet.length}</p>
+                    <p class="text-center text-sm text-gray-800">目標: 根據提示詞完成句子。分數: ${state.score}/${state.currentQuizSet.length}</p>
                 </section>
                 
                 <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-md">
@@ -1094,16 +1143,17 @@
                         <div class="g4-sentence-part" id="g4-sentence-display">${questionTextHtml}</div>
                     </div>
 
-                    <h3 class="text-xl font-bold text-gray-800 mt-6 mb-4">選擇停車位 (Choose the spot):</h3>
-                    
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-3xl">
-                        ${optionsHtml}
-                    </div>
+                    ${answerSectionHtml}
                     
                     ${isAnswerFilled ? `<button onclick="goToNextQuestion(renderGame4)" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mt-8">下一題</button>` : ''}
                     <button onclick="initGame4()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mt-8 ${isAnswerFilled ? 'hidden' : ''}">重新開始</button>
                 </div>
             `;
+            if (!isAnswerFilled) {
+                setTimeout(() => {
+                    document.getElementById('g4-input-answer')?.focus();
+                }, 0);
+            }
         }
         // --- Game 4 End ---
         
@@ -1371,37 +1421,32 @@
 
         function initGame7() {
             if (!setupQuiz('g7_comparatives', 'g7')) return;
+            state.g7_inputAnswer = ''; // 重置輸入
             renderGame7();
         }
-
-        function handleAnswerG7(selectedComparative) {
+        
+        function checkAnswerG7() {
             if (state.gameStatus !== 'playing') return;
 
-            const storedQ = state.g7_currentQuestion;
-            if (!storedQ) return; // Should not happen
-
-            const baseAdj = storedQ.adj.toUpperCase();
-            const questionIsAisB = storedQ.isAisB;
-
-            let effectiveAdj = baseAdj;
-            if (!questionIsAisB) {
-                // If the question is B vs A (reverse), use the antonym's comparative form
-                effectiveAdj = ANTONYM_MAP[baseAdj] || baseAdj; 
-            }
-
-            const expectedAnswer = _getComparativeForm(effectiveAdj);
+            const currentQ = state.currentQuizSet[state.currentQIndex];
+            const enteredText = state.g7_inputAnswer;
             
-            if (selectedComparative === expectedAnswer) {
-                // 修正：答對時檢查是否已計分
+            const expectedAnswer = currentQ.answer;
+
+            // 修正：答案比對時，只比較內容，忽略大小寫
+            if (enteredText.trim().toUpperCase() === expectedAnswer.toUpperCase()) {
+                
                 if (!state.currentQHasFailed && !state.currentQHasScored) {
                     state.score++;
                     state.currentQHasScored = true;
                     MessageBox.show("答對了！平衡儀器正常運作！⚖️ (+1 分)", false);
                 } else {
-                    MessageBox.show("答對了！請準備下一題。⚖️", false);
+                    MessageBox.show("已答對，請點擊下一題。⚖️", false);
                 }
+                
+                // 重新渲染 (帶有填入的答案和「下一題」按鈕)
+                renderGame7(true); 
 
-                setTimeout(() => goToNextQuestion(renderGame7), 1000);
             } else {
                 // 答錯，不計分，不跳題
                 state.currentQHasFailed = true; // 只要錯一次，就不能加分
@@ -1409,7 +1454,8 @@
             }
         }
 
-        function renderGame7() {
+
+        function renderGame7(isAnswerFilled = false) {
             const container = document.getElementById('game-content');
             if (!container || currentGame !== 'game7') return; 
 
@@ -1421,34 +1467,24 @@
             const currentQ = state.currentQuizSet[state.currentQIndex];
             const questionNumber = state.currentQIndex + 1;
             
-            // 隨機選擇問法：A 比 B (更...嗎?)
-            const isAisB = Math.random() > 0.5;
-            state.g7_currentQuestion = { ...currentQ, isAisB: isAisB }; // Store state for checking
+            const expectedAnswer = currentQ.answer;
 
-            const { expectedAnswer, options: comparativeOptions } = generateComparativeOptionsAndAnswer(currentQ, isAisB);
-            
             // 決定句子主語和客體
-            const subjectNoun = isAisB ? currentQ.nounA : currentQ.nounB;
-            const objectNoun = isAisB ? currentQ.nounB : currentQ.nounA;
-            const subjectURL = isAisB ? currentQ.urlA : currentQ.urlB;
-            const objectURL = isAisB ? currentQ.urlB : currentQ.urlA;
+            const subjectNoun = currentQ.nounA;
+            const objectNoun = currentQ.nounB;
+            const subjectURL = currentQ.urlA;
+            const objectURL = currentQ.urlB;
             
-            const blank = '____';
-            const questionText = `${formatDisplayWord(subjectNoun, true)} is ${blank} than ${formatDisplayWord(objectNoun)}.`;
+            // 提示詞使用後台設定的 hint
+            const hintAdj = currentQ.hint;
 
-            const optionsHtml = comparativeOptions.map(comp => {
-                const escapedComp = comp.replace(/'/g, "\\'"); // 修正：轉義單引號
-                
-                // 修正：比較級選項全部小寫 (您的要求)
-                const displayOption = formatDisplayWord(comp, false).toLowerCase(); 
+            // 決定填空內容
+             const blankContent = isAnswerFilled 
+                ? formatDisplayWord(expectedAnswer, false).toLowerCase() // 填入答案，強制全小寫
+                : '____';
 
-                return `
-                    <button onclick="handleAnswerG7('${escapedComp}')"
-                        class="key-btn g7-option-btn-style font-bold py-3 rounded-xl text-lg shadow-cute">
-                    ${displayOption}
-                </button>
-            `;
-            }).join('');
+            const questionText = `${formatDisplayWord(subjectNoun, true)} is ${blankContent} than ${formatDisplayWord(objectNoun)}.`;
+
 
             container.innerHTML = `
                 <section class="w-full bg-orange-500 p-4 rounded-xl shadow-inner border-b-8 border-orange-800 g7-header">
@@ -1472,17 +1508,37 @@
                     </div>
 
                     <div class="p-4 bg-yellow-100 rounded-lg border-2 border-yellow-400 w-full max-w-xl text-center mb-6 g7-question-area">
-                        <h4 class="text-2xl font-bold text-orange-700 mb-2">請填空</h4>
+                        <h4 class="text-2xl font-bold text-orange-700 mb-2">請填空 (提示詞: ${hintAdj})</h4>
                         <p class="text-xl font-medium text-gray-800">${questionText}</p>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 w-full max-w-lg">
-                        ${optionsHtml}
+                    <div class="flex flex-col items-center p-4 w-full max-w-lg">
+                        <div class="flex w-full space-x-2">
+                            <input type="text" 
+                                   id="g7-input-answer"
+                                   value="${isAnswerFilled ? formatDisplayWord(expectedAnswer, false).toLowerCase() : state.g7_inputAnswer}"
+                                   oninput="state.g7_inputAnswer = this.value;"
+                                   placeholder="請輸入答案..." 
+                                   class="flex-grow text-2xl p-3 border-4 border-secondary-blue rounded-xl text-center font-bold focus:border-blue-500 ${isAnswerFilled ? 'bg-green-100 text-green-700' : ''}"
+                                   ${isAnswerFilled ? 'disabled' : ''}>
+                            <button onclick="checkAnswerG7()" 
+                                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-cute text-xl ${isAnswerFilled ? 'opacity-50 pointer-events-none' : ''}">
+                                CHECK ✅
+                            </button>
+                        </div>
                     </div>
                     
-                    <button onclick="initGame7()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mt-8">重新開始</button>
+                    ${isAnswerFilled ? `<button onclick="goToNextQuestion(renderGame7)" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mt-8">下一題</button>` : ''}
+                    <button onclick="initGame7()" class="bg-primary-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-full shadow-cute text-lg mt-8 ${isAnswerFilled ? 'hidden' : ''}">重新開始</button>
                 </div>
             `;
+
+            // 確保輸入框在渲染後能聚焦 (僅在未填入答案時)
+            if (!isAnswerFilled) {
+                setTimeout(() => {
+                    document.getElementById('g7-input-answer')?.focus();
+                }, 0);
+            }
         }
         // --- Game 7 End ---
         
@@ -1503,11 +1559,12 @@
         const ADMIN_TABS = [
             { key: 'g1_words', name: '🦖 詞彙對對碰', headers: ['word', 'emoji'] },
             { key: 'g2_words', name: '🤖 拼讀機器人', headers: ['Word'] },
-            { key: 'g3_actions', name: '🦸 動作指令', headers: ['verb'] }, 
-            { key: 'g4_grammar', name: '🚗 文法停車場', headers: ['sentence', 'answer'] },
+            { key: 'g3_words', name: '🔎 單字尋寶趣', headers: ['word'] }, // G3 Updated
+            { key: 'g4_grammar', name: '🚗 文法停車場', headers: ['sentence', 'answer', 'hint'] },
             { key: 'g5_true_false', name: '🤥 誰說謊了?', headers: ['statement', 'imageUrl', 'answer'] },
             { key: 'g6_qa_match', name: '🗺️ 尋寶問答', headers: ['question', 'answer'] }, 
-            { key: 'g7_comparatives', name: '⚖️ 比較級傳送門', headers: ['nounA', 'nounB', 'adj', 'urlA', 'urlB'] },
+            // 修正 G7 headers: 更新為新格式
+            { key: 'g7_comparatives', name: '⚖️ 比較級傳送門', headers: ['nounA', 'nounB', 'answer', 'urlA', 'urlB', 'hint'] },
         ];
         let currentAdminKey = ADMIN_TABS[0].key;
         
@@ -1563,8 +1620,9 @@
                              updatedItem[header] = newValue;
                          }
                     }
-                    if (!updatedItem[header] && header !== 'imageUrl' && header !== 'urlA' && header !== 'urlB') {
-                        isValid = false; // 確保非圖片 URL 的核心欄位不為空
+                    // 只有 core fields 需要驗證，hint, urlA, urlB 可以為空
+                    if (header === 'answer' && !updatedItem[header]) { 
+                         isValid = false; 
                     }
                 });
 
@@ -1638,6 +1696,22 @@
             renderWordAdmin();
         }
 
+        // **新增**：自動生成提示詞的輔助函數
+        function getAutoHint(key, value) {
+            // value 必須是小寫進行查找
+            const lowerValue = value.toLowerCase().replace(/_/g, ' '); 
+            
+            if (key === 'answer') {
+                return DEFAULT_HINTS[lowerValue] || ''; // 找不到則留空
+            }
+            // For G7 'answer' which used to be 'adj' logic
+            if (key === 'answer' && ALL_ADJECTIVES.includes(lowerValue)) {
+                 const baseKey = lowerValue;
+                 return DEFAULT_HINTS[baseKey] || ''; 
+            }
+            return '';
+        }
+
 
         function handleFileUpload(event) {
             const file = event.target.files[0];
@@ -1670,29 +1744,38 @@
                      if (!currentList.includes(rawValues[0])) { newEntry = rawValues[0]; }
                 } 
                 else {
-                    if (currentAdminKey === 'g1_words' && rawValues.length >= 2) {
-                        newEntry = { id: newId, word: rawValues[0], emoji: rawValues[1] };
-                    } 
-                    else if (currentAdminKey === 'g3_actions' && rawValues.length >= 1) {
-                        newEntry = { id: newId, verb: rawValues[0] };
-                    } 
-                    // G4 數據解析邏輯：只需要 sentence 和 answer
+                    let tempEntry = { id: newId };
+                    
+                    if (currentAdminKey === 'g3_words' && rawValues.length >= 1) { // G3
+                        tempEntry.verb = rawValues[0];
+                        newEntry = tempEntry;
+                    }
                     else if (currentAdminKey === 'g4_grammar' && rawValues.length >= 2) {
-                        newEntry = { id: newId, sentence: rawValues[0], answer: rawValues[1] };
-                    } 
-                    else if (currentAdminKey === 'g5_true_false' && rawValues.length >= 3) {
-                        newEntry = { id: newId, statement: rawValues[0], imageUrl: rawValues[1], answer: rawValues[2].toLowerCase() === 'true' };
-                    } 
-                    else if (currentAdminKey === 'g6_qa_match' && rawValues.length >= 2) {
-                        const answer = rawValues[1];
-                        newEntry = { id: newId, question: rawValues[0], answer: answer };
+                        tempEntry.sentence = rawValues[0];
+                        tempEntry.answer = rawValues[1];
+                        // 修正：檢查 hint 是否提供，如果沒有則自動生成
+                        tempEntry.hint = rawValues[2] || getAutoHint('answer', rawValues[1]);
+                        newEntry = tempEntry;
                     } 
                     else if (currentAdminKey === 'g7_comparatives' && rawValues.length >= 3) {
-                        newEntry = { id: newId, nounA: rawValues[0], nounB: rawValues[1], adj: rawValues[2], urlA: rawValues[3] || '', urlB: rawValues[4] || '' };
-                    }
+                        // 新格式: nounA, nounB, answer, urlA, urlB, hint
+                        tempEntry.nounA = rawValues[0];
+                        tempEntry.nounB = rawValues[1];
+                        tempEntry.answer = rawValues[2];
+                        tempEntry.urlA = rawValues[3] || '';
+                        tempEntry.urlB = rawValues[4] || '';
+                        // 修正：檢查 hint 是否提供，如果沒有則自動生成
+                        tempEntry.hint = rawValues[5] || getAutoHint('answer', rawValues[2]); 
+                        newEntry = tempEntry;
+                    } 
+                    // Other fixed formats
+                    else if (currentAdminKey === 'g1_words' && rawValues.length >= 2) { newEntry = { id: newId, word: rawValues[0], emoji: rawValues[1] }; }
+                    else if (currentAdminKey === 'g3_actions' && rawValues.length >= 1) { newEntry = { id: newId, verb: rawValues[0] }; } 
+                    else if (currentAdminKey === 'g5_true_false' && rawValues.length >= 3) { newEntry = { id: newId, statement: rawValues[0], imageUrl: rawValues[1], answer: rawValues[2].toLowerCase() === 'true' }; } 
+                    else if (currentAdminKey === 'g6_qa_match' && rawValues.length >= 2) { newEntry = { id: newId, question: rawValues[0], answer: rawValues[1] }; }
                 }
 
-                if (newEntry) {
+                if (newEntry && (currentAdminKey !== 'g4_grammar' && currentAdminKey !== 'g7_comparatives' || newEntry.answer)) {
                     if (currentAdminKey === 'g2_words') {
                         currentList.push(newEntry);
                     } else if (!currentList.some(item => JSON.stringify(item) === JSON.stringify(newEntry))) {
@@ -1735,15 +1818,24 @@
                      if (!currentList.includes(rawValues[0])) newEntry = rawValues[0];
                 } 
                 else {
+                    let tempEntry = { id: newId };
+                    
                     if (currentAdminKey === 'g1_words' && rawValues.length >= 2) {
                         newEntry = { id: newId, word: rawValues[0], emoji: rawValues[1] };
                     } 
+                    else if (currentAdminKey === 'g3_words' && rawValues.length >= 1) { // G3 Update
+                         newEntry = { id: newId, verb: rawValues[0] };
+                    }
                     else if (currentAdminKey === 'g3_actions' && rawValues.length >= 1) {
                         newEntry = { id: newId, verb: rawValues[0] };
                     }
                     // G4 數據解析邏輯：只需要 sentence 和 answer
                     else if (currentAdminKey === 'g4_grammar' && rawValues.length >= 2) {
-                        newEntry = { id: newId, sentence: rawValues[0], answer: rawValues[1] };
+                        tempEntry.sentence = rawValues[0];
+                        tempEntry.answer = rawValues[1];
+                        // 修正：檢查 hint 是否提供，如果沒有則自動生成
+                        tempEntry.hint = rawValues[2] || getAutoHint('answer', rawValues[1]);
+                        newEntry = tempEntry;
                     } 
                     else if (currentAdminKey === 'g5_true_false' && rawValues.length >= 3) {
                         newEntry = { id: newId, statement: rawValues[0], imageUrl: rawValues[1], answer: rawValues[2].toLowerCase() === 'true' };
@@ -1753,7 +1845,16 @@
                         newEntry = { id: newId, question: rawValues[0], answer: answer };
                     }
                     else if (currentAdminKey === 'g7_comparatives' && rawValues.length >= 3) {
-                        newEntry = { id: newId, nounA: rawValues[0], nounB: rawValues[1], adj: rawValues[2], urlA: rawValues[3] || '', urlB: rawValues[4] || '' };
+                        // 新格式: nounA, nounB, answer, urlA, urlB, hint
+                        // 注意: 這裡的 answer 就是比較級單字
+                         const nounA = rawValues[0];
+                         const nounB = rawValues[1];
+                         const answer = rawValues[2];
+                         const urlA = rawValues[3] || '';
+                         const urlB = rawValues[4] || '';
+                         const hint = rawValues[5] || getAutoHint('answer', answer);
+
+                        newEntry = { id: newId, nounA: nounA, nounB: nounB, answer: answer, urlA: urlA, urlB: urlB, hint: hint };
                     }
                 }
                 
@@ -1851,10 +1952,11 @@
                     
                     if (currentAdminKey === 'g1_words') display = `${item.emoji} / ${formatDisplayWord(item.word)}`;
                     else if (currentAdminKey === 'g3_actions') display = `Verb: ${formatDisplayWord(item.verb)}`; 
-                    else if (currentAdminKey === 'g4_grammar') display = `Sentence: ${formatDisplayWord(item.sentence)} / Answer: ${formatDisplayWord(item.answer)}`;
+                    else if (currentAdminKey === 'g3_words') display = `Word: ${formatDisplayWord(item.verb)}`; // G3 Update
+                    else if (currentAdminKey === 'g4_grammar') display = `Sentence: ${formatDisplayWord(item.sentence)} / Answer: ${formatDisplayWord(item.answer)} / Hint: ${item.hint || 'N/A'}`;
                     else if (currentAdminKey === 'g5_true_false') display = `Statment: ${formatDisplayWord(item.statement)} / Ans: ${item.answer} / Img: ${item.imageUrl.substring(0, 10)}...`;
                     else if (currentAdminKey === 'g6_qa_match') display = `Q: ${formatDisplayWord(item.question)} / Ans: ${formatDisplayWord(item.answer)}`; 
-                    else if (currentAdminKey === 'g7_comparatives') display = `${item.nounA} vs ${item.nounB} (${item.adj})`;
+                    else if (currentAdminKey === 'g7_comparatives') display = `${item.nounA} vs ${item.nounB} (Ans: ${item.answer}) / Hint: ${item.hint || 'N/A'}`;
                 }
                 
                 const isChecked = selectedWordIds.has(deleteId);
